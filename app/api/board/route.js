@@ -9,5 +9,8 @@ export async function GET(){try{
   return analyzeGame({...s,total:o.total,booksCount:o.booksCount,weather,awayProfile,homeProfile,awayInjury:injuryAdjustment(awayItems),homeInjury:injuryAdjustment(homeItems)})
  }));
  const games=rows.filter(Boolean).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
- return NextResponse.json({updatedAt:new Date().toISOString(),year:current.year,week:current.week,oddsMode:"LIVE CONSENSUS",modelVersion:"final-v2",altRule:2.5,games})
+ const ranked=[...games].sort((a,b)=>(b.hotScore||0)-(a.hotScore||0)||Math.abs(b.edge||0)-Math.abs(a.edge||0));
+ const hotIds=new Map(ranked.slice(0,5).map((g,i)=>[`${g.away}-${g.home}-${g.kickoff}`,i+1]));
+ const decorated=games.map(g=>({...g,hotRank:hotIds.get(`${g.away}-${g.home}-${g.kickoff}`)||null,isHot:hotIds.has(`${g.away}-${g.home}-${g.kickoff}`)}));
+ return NextResponse.json({updatedAt:new Date().toISOString(),year:current.year,week:current.week,oddsMode:"LIVE CONSENSUS",modelVersion:"hot-v1",altRule:2.5,games:decorated})
 }catch(e){return NextResponse.json({error:e.message||"Unable to build board"},{status:500})}}
