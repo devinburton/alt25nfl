@@ -1,36 +1,16 @@
-# ALT 2.5 NFL Totals
+# ALT 2.5 — Automatic NFL Version
 
-Deployable Next.js starter for your web betting group.
+This replaces the hard-coded Week 2 starter.
 
-## Core rule
-Use the market total, choose OVER or UNDER from the model, then move the line exactly 2.5 points in the pick's favor.
+Automatic now:
+- Current NFL week and schedule
+- Live consensus totals from The Odds API
+- Stadium weather from Open-Meteo
+- Recent completed-season scoring/defense
+- Model projection, side, confidence and fixed 2.5-point cushion
 
-## Built now
-- Week 2 NFL board
-- Vegas/main total
-- projected total and edge
-- OVER/UNDER model decision
-- fixed 2.5-point alternate line
-- confidence
-- weather display
-- current fallback snapshot
-- optional live consensus totals from The Odds API
-- mobile-friendly layout
+Required Vercel environment variable: ODDS_API_KEY
 
-## Run
-1. Install Node.js 20+
-2. `npm install`
-3. `npm run dev`
-4. Open http://localhost:3000
+Upload the CONTENTS of this folder to the same GitHub repo and overwrite the old files. Vercel will redeploy automatically.
 
-## Live odds
-Create `.env.local`:
-`ODDS_API_KEY=your_key_here`
-
-The API key stays server-side.
-
-## Deploy
-Push this folder to GitHub, import it into Vercel, add `ODDS_API_KEY` as an environment variable, then deploy.
-
-## Next model upgrade
-Add a real stats feed for offensive/defensive EPA, pace, success rate, injuries, explosive plays and home/away splits, then back-test the weights. The current starter is a transparent MVP, not a predictive-grade finished model.
+Note: ESPN's scoreboard endpoint is public but unofficial/undocumented. The model is an MVP, not a validated betting model.
