@@ -1,33 +1,29 @@
-# ALT 2.5 — Hot Picks build
+# ALT 2.5 — Credit Saver + Hot Picks + Parlays
 
-Adds a fourth tab: **🔥 Hot Picks**
+This build keeps the 2-hour Odds API cache and includes two extra tabs without adding extra Odds API calls.
 
-The app automatically ranks the current NFL week's five strongest model plays.
+## Tabs
+- All Games
+- OVER Picks
+- UNDER Picks
+- 🔥 Hot Picks — top five model-rated games
+- 🎯 3-Leg Parlay — top three model-rated games from the full weekly slate
+- 🎰 Sunday Lottery Ticket — **EVERY Sunday game** on the slate, ranked by Hot Score, as one mega-longshot totals ticket
 
-## Hot Score
-Hot Score is **not** a claimed win probability. It is a 0–100 ranking score built from:
-- absolute model edge vs. the market total
-- data completeness / sample quality
-- number of sportsbooks contributing to the consensus
-- whether weather is available
-- the same underlying model inputs already used by ALT 2.5
+## Sunday Lottery Ticket
+This is intentionally the "Mega Millions" style tab:
+- every Sunday NFL game with a posted total is included
+- each leg uses the ALT 2.5 model's OVER/UNDER side and 2.5-point cushion
+- games are shown in Hot Score order, but none are omitted
+- extremely high variance by design
 
-The five highest-scoring games receive `hotRank` 1–5 and appear in the Hot Picks tab.
+## Important
+Hot Score is a ranking score, not a calibrated win probability.
 
-Core model inputs remain:
-- live consensus total
-- recent scoring and points allowed
-- YPP efficiency
-- pace / play volume
-- red zone
-- third down
-- explosive plays when the feed supplies them
-- turnovers
-- home/away form
-- weather
-- injuries
+The extra tabs use the same already-loaded weekly board and do **not** trigger additional Odds API requests.
+
+## Credit Saver
+The Odds API response is cached for 2 hours with Next.js `unstable_cache`.
 
 Required Vercel variable:
 `ODDS_API_KEY`
-
-This is a ranking model, not a guarantee or calibrated probability model.
