@@ -1,29 +1,17 @@
-# ALT 2.5 — Credit Saver + Hot Picks + Parlays
+# ALT25 — Front-End Revamp
 
-This build keeps the 2-hour Odds API cache and includes two extra tabs without adding extra Odds API calls.
+This build changes the presentation only. The existing backend, Odds API credit saver, 2-hour odds cache, model, Hot Picks, 3-Leg Parlay, and Sunday Lottery logic are preserved.
 
-## Tabs
-- All Games
-- OVER Picks
-- UNDER Picks
-- 🔥 Hot Picks — top five model-rated games
-- 🎯 3-Leg Parlay — top three model-rated games from the full weekly slate
-- 🎰 Sunday Lottery Ticket — **EVERY Sunday game** on the slate, ranked by Hot Score, as one mega-longshot totals ticket
+## New front-end
+- stronger ALT25 branding
+- featured top-three Hot Picks
+- cleaner live-board status
+- sticky filter navigation
+- redesigned matchup cards
+- prominent ALT 2.5 play
+- Hot Score meter
+- expandable “Why this pick?” stats
+- improved mobile layout
+- visible odds cache and last-pull information
 
-## Sunday Lottery Ticket
-This is intentionally the "Mega Millions" style tab:
-- every Sunday NFL game with a posted total is included
-- each leg uses the ALT 2.5 model's OVER/UNDER side and 2.5-point cushion
-- games are shown in Hot Score order, but none are omitted
-- extremely high variance by design
-
-## Important
-Hot Score is a ranking score, not a calibrated win probability.
-
-The extra tabs use the same already-loaded weekly board and do **not** trigger additional Odds API requests.
-
-## Credit Saver
-The Odds API response is cached for 2 hours with Next.js `unstable_cache`.
-
-Required Vercel variable:
-`ODDS_API_KEY`
+No new external API calls were added.
