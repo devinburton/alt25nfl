@@ -1,46 +1,40 @@
-# ALT25 — Multi-Sport Totals
+# ALT25 — Smart Multi-Sport v2
 
-This build keeps the NFL Always-On behavior and expands ALT25 beyond NFL-only branding.
+This build upgrades the non-NFL models without increasing the paid Odds API market/region footprint.
 
-## Navigation
-- NFL
-- NCAA Totals
-- NBA Totals
-- WNBA Totals
-- Baseball Totals
+## What stays the same
+- NFL model and NFL 2-hour odds cache
+- NCAA / NBA / WNBA / MLB tabs
+- only Top 3 selections for non-NFL sports
+- literal ALT25 +/- 2.5 cushion
+- US region + totals market only
+- 6-hour paid odds cache for non-NFL sports
+- lazy loading: a non-NFL sport is queried only when its tab is opened
 
-## NFL
-NFL remains the full board with:
-- All Games
-- Overs
-- Unders
-- Hot Picks
-- Always-On / Early Board / Next Slate modes
-- existing weather, injuries, efficiency, Hot Score and 2-hour Odds API cache
+## Smarter non-NFL inputs
+All non-NFL models now use:
+- recent scoring offense
+- recent scoring defense
+- last-three scoring trend
+- home/away splits
+- rest days
+- scoring / total volatility
+- sportsbook consensus depth
 
-The old 3-Leg Parlay and Sunday Lottery tabs are removed.
+NBA/WNBA:
+- basketball-specific rest adjustment, including short-rest/back-to-back style penalties
 
-## Other sports
-NCAA, NBA, WNBA and MLB display only the **top 3 model-rated totals** from the next relevant slate (or fewer when fewer games exist).
+NCAA:
+- football-specific recent-form, defense, home/away and rest adjustments
 
-- NCAA uses the nearest weekly slate.
-- NBA/WNBA/MLB use the next game-day slate.
-- Offseason sports stay visible but make no paid odds call after the free active-sports check says they are inactive.
-- Other-sport odds are cached for 6 hours.
-- Tabs are lazy-loaded: a non-NFL league is not queried until you click its tab.
+MLB:
+- recent runs scored/allowed
+- home/away run context
+- recent trend and volatility
+- probable starting pitchers and season ERA when available from the public MLB Stats API
 
-## Data / model
-The Odds API supplies consensus totals. ESPN public scoreboard data supplies recent scoring results for the non-NFL models.
+## API-credit impact
+No additional Odds API markets or regions were added. The new intelligence comes from public/free statistical feeds and calculations inside ALT25. MLB Stats API calls and ESPN public-data calls do not consume The Odds API quota.
 
-The non-NFL models are sport-specific recent scoring/defense models anchored to the market total. They are intentionally simpler than the NFL model and do not pretend to use unavailable metrics.
-
-The ALT25 2.5-point/run cushion is preserved across sports.
-
-## Required Vercel variable
-ODDS_API_KEY
-
-
-## 2026-09-22 sport-tab route fix
-The dynamic `/api/sport/[sport]` route now awaits Next.js route params before reading the sport name.
-This fixes the non-NFL tabs returning an unknown-sport/404 response on current Next.js versions.
-The NFL model and all Odds API cache settings are unchanged.
+## Important
+The non-NFL models are still experimental. Hot Score is a ranking score, not a win probability. Backtesting is the next major step for calibration.

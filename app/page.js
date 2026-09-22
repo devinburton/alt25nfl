@@ -173,7 +173,7 @@ export default function Home(){
       <div>
         <div className="kicker">TOTALS ACROSS THE BOARD</div>
         <h1>Find the edge.<br/><span>Take the 2.5.</span></h1>
-        <p>ALT25 analyzes totals across football, basketball and baseball. NFL gets the full board; other sports surface only the three strongest model-rated totals from the next slate.</p>
+        <p>ALT25 analyzes totals across football, basketball and baseball. NFL gets the full board; other sports surface only the three strongest model-rated totals from the next slate using recent form, defense, location, rest and sport-specific context.</p>
       </div>
       <div className="heroPanel">
         <span>Selected Sport</span>
@@ -247,7 +247,7 @@ export default function Home(){
 
       {sportBoards[sport]&&sportBoards[sport].status==="ACTIVE"&&<>
         <section className="sportStatus">
-          <div><span className="sectionEyebrow">{sport}</span><h2>Top {sportBoards[sport].games.length} Totals</h2><p>ALT25 analyzed {sportBoards[sport].slateGames} games in the next slate and surfaced only the strongest three model-rated totals.</p></div>
+          <div><span className="sectionEyebrow">{sport}</span><h2>Top {sportBoards[sport].games.length} Totals</h2><p>ALT25 analyzed {sportBoards[sport].slateGames} games in the next slate and surfaced only the strongest three model-rated totals. Model: {sportBoards[sport].modelVersion||"smart-v2"}.</p></div>
           <div className="sportMeta"><span>Odds cache <strong>{sportBoards[sport].cacheHours}h</strong></span><span>Updated <strong>{fmtUpdated(sportBoards[sport].fetchedAt)}</strong></span></div>
         </section>
         <div className="gameGrid">{sportBoards[sport].games.map((g,i)=><SportCard g={g} sport={sport} key={`${g.away}-${g.home}-${i}`}/>)}</div>
@@ -256,7 +256,7 @@ export default function Home(){
 
     <footer className="footerRevamp">
       <div><strong>ALT25</strong><span>Sports Totals Intelligence</span></div>
-      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. NCAA, NBA, WNBA and MLB use sport-specific recent scoring/defense models and display only the top three totals. Missing data is skipped rather than invented.</p>
+      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. NCAA, NBA and WNBA now add recent-form trend, location and rest context; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
     </footer>
   </main>;
 }
