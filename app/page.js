@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import{useEffect,useMemo,useState}from"react";
 
-const TABS = [
+const SPORTS=[
+  ["NFL","NFL"],
+  ["NCAA","NCAA Totals"],
+  ["NBA","NBA Totals"],
+  ["WNBA","WNBA Totals"],
+  ["MLB","Baseball Totals"]
+];
+
+const NFL_FILTERS=[
   ["ALL","All Games"],
   ["OVER","Overs"],
   ["UNDER","Unders"],
-  ["HOT","🔥 Hot Picks"],
-  ["PARLAY","🎯 3-Leg"],
-  ["LOTTERY","🎰 Sunday Lottery"]
+  ["HOT","🔥 Hot Picks"]
 ];
 
-function fmtKickoff(v){
+function fmt(v){
+  if(!v)return"Pending";
   return new Intl.DateTimeFormat("en-US",{
     weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",
     timeZone:"America/New_York"
@@ -19,7 +26,7 @@ function fmtKickoff(v){
 }
 
 function fmtUpdated(v){
-  if(!v) return "Pending";
+  if(!v)return"Pending";
   return new Intl.DateTimeFormat("en-US",{
     month:"short",day:"numeric",hour:"numeric",minute:"2-digit",
     timeZone:"America/New_York"
@@ -27,29 +34,23 @@ function fmtUpdated(v){
 }
 
 const one=v=>Number.isFinite(v)?v.toFixed(1):"—";
-const pct=v=>Number.isFinite(v)?`${Math.round(v*100)}%`:"—";
 
 function ScoreBar({score=0}){
   const safe=Math.max(0,Math.min(100,Number(score)||0));
-  return <div className="scoreWrap" aria-label={`Hot Score ${safe} out of 100`}>
+  return <div className="scoreWrap">
     <div className="scoreLabel"><span>Hot Score</span><strong>{safe}</strong></div>
-    <div className="scoreTrack"><span style={{width:`${safe}%`}} /></div>
+    <div className="scoreTrack"><span style={{width:`${safe}%`}}/></div>
   </div>
 }
 
-function GameCard({g,filter,index}){
-  const rank = filter==="PARLAY" ? g.parlayRank : filter==="LOTTERY" ? g.lotteryRank : g.hotRank;
-  const rankLabel = filter==="PARLAY" ? `PARLAY LEG ${rank}` :
-                    filter==="LOTTERY" ? `LOTTERY LEG ${rank}` :
-                    g.isHot ? `HOT PICK #${g.hotRank}` : null;
-
+function NflCard({g}){
   return <article className={`gameCard ${g.isHot?"isHot":""}`}>
     <div className="cardHead">
       <div className="cardHeadMain">
-        <div className="kickoff">{fmtKickoff(g.kickoff)}</div>
+        <div className="kickoff">{fmt(g.kickoff)}</div>
         <h3>{g.away} <span>@</span> {g.home}</h3>
         <div className="cardBadges">
-          {rankLabel&&<span className="pill emphasis">{rankLabel}</span>}
+          {g.isHot&&<span className="pill emphasis">HOT PICK #{g.hotRank}</span>}
           <span className="pill">{g.weather?.label||"Weather pending"}</span>
         </div>
       </div>
@@ -57,14 +58,8 @@ function GameCard({g,filter,index}){
     </div>
 
     <div className="pickHero">
-      <div>
-        <span className="pickEyebrow">ALT 2.5 PLAY</span>
-        <div className={`mainPick ${g.side?.toLowerCase()}`}>{g.side} {one(g.altLine)}</div>
-      </div>
-      <div className="confidenceBox">
-        <span>Confidence</span>
-        <strong>{g.confidence}</strong>
-      </div>
+      <div><span className="pickEyebrow">ALT25 PLAY</span><div className={`mainPick ${g.side?.toLowerCase()}`}>{g.side} {one(g.altLine)}</div></div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
     </div>
 
     <div className="numbersRow">
@@ -74,29 +69,49 @@ function GameCard({g,filter,index}){
       <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
     </div>
 
-    <ScoreBar score={g.hotScore} />
+    <ScoreBar score={g.hotScore}/>
+
+    <details className="why">
+      <summary>Why this pick?</summary>
+      <div className="whyBody"><p className="modelReason">{g.modelNote}</p></div>
+    </details>
+  </article>
+}
+
+function SportCard({g,sport}){
+  return <article className="gameCard isHot">
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(g.kickoff)}</div>
+        <h3>{g.away} <span>@</span> {g.home}</h3>
+        <div className="cardBadges">
+          <span className="pill emphasis">#{g.rank} {sport} PICK</span>
+        </div>
+      </div>
+      <div className={`sideStamp ${g.side?.toLowerCase()}`}>{g.side}</div>
+    </div>
+
+    <div className="pickHero">
+      <div><span className="pickEyebrow">ALT25 PLAY</span><div className={`mainPick ${g.side?.toLowerCase()}`}>{g.side} {one(g.altLine)}</div></div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+    </div>
+
+    <div className="numbersRow">
+      <div><span>Market</span><strong>{one(g.total)}</strong></div>
+      <div><span>Model</span><strong>{one(g.projected)}</strong></div>
+      <div><span>Edge</span><strong>{g.edge>0?"+":""}{one(g.edge)}</strong></div>
+      <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+    </div>
+
+    <ScoreBar score={g.hotScore}/>
 
     <details className="why">
       <summary>Why this pick?</summary>
       <div className="whyBody">
         <p className="modelReason">{g.modelNote}</p>
         <div className="teamStats">
-          <div className="teamStatBox">
-            <strong>{g.away}</strong>
-            <span>YPP {one(g.awayProfile?.ypp)}</span>
-            <span>Plays {one(g.awayProfile?.plays)}</span>
-            <span>RZ {pct(g.awayProfile?.redPct)}</span>
-            <span>Expl {one(g.awayProfile?.explosive)}</span>
-            <span>Injuries {g.awayInjury?.notable??0}</span>
-          </div>
-          <div className="teamStatBox">
-            <strong>{g.home}</strong>
-            <span>YPP {one(g.homeProfile?.ypp)}</span>
-            <span>Plays {one(g.homeProfile?.plays)}</span>
-            <span>RZ {pct(g.homeProfile?.redPct)}</span>
-            <span>Expl {one(g.homeProfile?.explosive)}</span>
-            <span>Injuries {g.homeInjury?.notable??0}</span>
-          </div>
+          <div className="teamStatBox"><strong>{g.away}</strong><span>Recent PF {one(g.awayProfile?.pointsFor)}</span><span>Recent PA {one(g.awayProfile?.pointsAllowed)}</span><span>Games {g.awayProfile?.games??0}</span></div>
+          <div className="teamStatBox"><strong>{g.home}</strong><span>Recent PF {one(g.homeProfile?.pointsFor)}</span><span>Recent PA {one(g.homeProfile?.pointsAllowed)}</span><span>Games {g.homeProfile?.games??0}</span></div>
         </div>
       </div>
     </details>
@@ -104,117 +119,140 @@ function GameCard({g,filter,index}){
 }
 
 export default function Home(){
-  const [data,setData]=useState(null);
-  const [error,setError]=useState("");
-  const [filter,setFilter]=useState("ALL");
+  const[nfl,setNfl]=useState(null);
+  const[error,setError]=useState("");
+  const[sport,setSport]=useState("NFL");
+  const[nflFilter,setNflFilter]=useState("ALL");
+  const[sportBoards,setSportBoards]=useState({});
+  const[loadingSport,setLoadingSport]=useState("");
 
   useEffect(()=>{
     fetch("/api/board",{cache:"no-store"})
-      .then(r=>{if(!r.ok)throw new Error("Could not load the board.");return r.json()})
-      .then(setData)
+      .then(r=>{if(!r.ok)throw new Error("Could not load NFL board.");return r.json()})
+      .then(setNfl)
       .catch(e=>setError(e.message));
   },[]);
 
-  const games=useMemo(()=>{
-    const l=data?.games||[];
-    if(filter==="ALL") return l;
-    if(filter==="HOT") return l.filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99));
-    if(filter==="PARLAY") return data?.parlay||[];
-    if(filter==="LOTTERY") return data?.sundayLottery||[];
-    return l.filter(g=>g.side===filter);
-  },[data,filter]);
+  useEffect(()=>{
+    if(sport==="NFL"||sportBoards[sport])return;
+    setLoadingSport(sport);
+    fetch(`/api/sport/${sport}`,{cache:"no-store"})
+      .then(r=>{if(!r.ok)throw new Error(`Could not load ${sport}.`);return r.json()})
+      .then(d=>setSportBoards(prev=>({...prev,[sport]:d})))
+      .catch(e=>setSportBoards(prev=>({...prev,[sport]:{status:"ERROR",message:e.message,games:[]}})))
+      .finally(()=>setLoadingSport(""));
+  },[sport,sportBoards]);
 
-  const featured=useMemo(()=>{
-    return (data?.games||[])
-      .filter(g=>g.isHot)
-      .sort((a,b)=>(a.hotRank||99)-(b.hotRank||99))
-      .slice(0,3);
-  },[data]);
+  const nflGames=useMemo(()=>{
+    const list=nfl?.games||[];
+    if(nflFilter==="ALL")return list;
+    if(nflFilter==="HOT")return list.filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99));
+    return list.filter(g=>g.side===nflFilter);
+  },[nfl,nflFilter]);
+
+  const featured=useMemo(()=>(
+    (nfl?.games||[]).filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99)).slice(0,3)
+  ),[nfl]);
+
+  const activeBoard=sport==="NFL"?nfl:sportBoards[sport];
 
   return <main className="siteShell">
     <header className="topBar">
-      <a className="brand" href="#" aria-label="ALT25 home">
+      <a className="brand" href="#" onClick={e=>{e.preventDefault();setSport("NFL")}}>
         <span className="brandMark">25</span>
-        <span><strong>ALT25</strong><small>NFL TOTALS INTELLIGENCE</small></span>
+        <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/> {data?"LIVE BOARD":"CONNECTING"}</div>
+      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
       <div>
-        <div className="kicker">BET THE TOTAL. MOVE THE LINE.</div>
+        <div className="kicker">TOTALS ACROSS THE BOARD</div>
         <h1>Find the edge.<br/><span>Take the 2.5.</span></h1>
-        <p>ALT25 turns the live market total into a model-driven OVER or UNDER, then gives the pick a fixed 2.5-point cushion.</p>
+        <p>ALT25 analyzes totals across football, basketball and baseball. NFL gets the full board; other sports surface only the three strongest model-rated totals from the next slate.</p>
       </div>
-      {data&&<div className="heroPanel">
-        <span>Current Board</span>
-        <strong>Week {data.week}</strong>
-        <div>NFL {data.year} · {data.oddsMode}</div>
-      </div>}
+      <div className="heroPanel">
+        <span>Selected Sport</span>
+        <strong>{sport}</strong>
+        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(activeBoard?.status==="ACTIVE"?"Top 3 totals":activeBoard?.status||"Loading")}</div>
+      </div>
     </section>
 
-    {data&&<section className="statusStrip">
-      <div><span>Games</span><strong>{data.games.length}</strong></div>
-      <div><span>Odds refresh</span><strong>{data.oddsCacheHours||2}h</strong></div>
-      <div><span>Last odds pull</span><strong>{fmtUpdated(data.oddsFetchedAt)}</strong></div>
-      <div><span>Cushion</span><strong>2.5</strong></div>
-    </section>}
-
-    {data&&filter==="ALL"&&featured.length>0&&<section className="featuredSection">
-      <div className="sectionTitle">
-        <div><span className="sectionEyebrow">THIS WEEK</span><h2>🔥 Featured Hot Picks</h2></div>
-        <button type="button" onClick={()=>setFilter("HOT")}>View top 5 →</button>
-      </div>
-      <div className="featuredGrid">
-        {featured.map((g,i)=><button type="button" className="featuredPick" key={`${g.away}-${g.home}`} onClick={()=>setFilter("HOT")}>
-          <span className="featuredRank">#{i+1}</span>
-          <span className="featuredTeams">{g.away} @ {g.home}</span>
-          <strong className={g.side?.toLowerCase()}>{g.side} {one(g.altLine)}</strong>
-          <span>Hot Score {g.hotScore}/100</span>
-        </button>)}
-      </div>
-    </section>}
-
-    <nav className="tabBar" aria-label="ALT25 board filters">
-      {TABS.map(([id,label])=><button
-        key={id}
-        type="button"
-        className={filter===id?"active":""}
-        onClick={()=>setFilter(id)}
-      >{label}</button>)}
+    <nav className="sportTabs" aria-label="Sports">
+      {SPORTS.map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>setSport(id)}>{label}</button>)}
     </nav>
 
-    {filter==="PARLAY"&&<div className="contextBanner">
-      <strong>🎯 3-Leg Parlay</strong>
-      <span>The three highest-rated model totals on the weekly board.</span>
-    </div>}
-    {filter==="LOTTERY"&&<div className="contextBanner warning">
-      <strong>🎰 Sunday Lottery Ticket</strong>
-      <span>Every Sunday total on one extreme-variance ticket.</span>
-    </div>}
+    {sport==="NFL"&&<>
+      {nfl&&<section className="statusStrip">
+        <div><span>Games</span><strong>{nfl.games?.length||0}</strong></div>
+        <div><span>Odds refresh</span><strong>{nfl.oddsCacheHours||2}h</strong></div>
+        <div><span>Last odds pull</span><strong>{fmtUpdated(nfl.oddsFetchedAt)}</strong></div>
+        <div><span>Week</span><strong>{nfl.week||"—"}</strong></div>
+      </section>}
 
-    {error&&<div className="stateBox errorBox">{error}</div>}
-    {!data&&!error&&<div className="stateBox">Building the live ALT25 board…</div>}
+      {nfl&&nfl.boardMode==="EARLY"&&<section className="lullBanner">
+        <div><span className="sectionEyebrow">EARLY BOARD</span><h2>Next NFL slate is live.</h2><p>Totals are posted. Weather and injury information will sharpen automatically as kickoff gets closer.</p></div>
+        <div className="readiness"><span className="ready">Odds ✓</span><span>Weather developing</span><span>Injuries developing</span><span>Model active</span></div>
+      </section>}
 
-    {data&&<section className="boardSection">
-      <div className="boardHeading">
-        <div>
-          <span className="sectionEyebrow">{filter==="ALL"?"FULL SLATE":filter}</span>
-          <h2>{filter==="ALL"?"This Week's Board":filter==="HOT"?"Top 5 Hot Picks":filter==="PARLAY"?"3-Leg Parlay":filter==="LOTTERY"?"Sunday Lottery Ticket":`${filter} Picks`}</h2>
+      {nfl&&nfl.boardMode==="WAITING"&&<section className="lullBanner">
+        <div><span className="sectionEyebrow">NEXT NFL SLATE</span><h2>Lines are loading.</h2><p>The matchups are here. ALT25 will turn them into picks automatically when totals post.</p></div>
+        <div className="readiness"><span>Odds pending</span><span>Schedule ✓</span><span>Model standing by</span></div>
+      </section>}
+
+      {nfl&&nfl.boardMode==="WAITING"&&nfl.upcomingSchedule?.length>0&&<section className="schedulePreview">
+        <div className="sectionTitle"><div><span className="sectionEyebrow">UPCOMING</span><h2>NFL Week {nfl.week}</h2></div></div>
+        <div className="previewGrid">{nfl.upcomingSchedule.map((g,i)=><div className="previewCard" key={i}><span>{fmt(g.kickoff)}</span><strong>{g.away} @ {g.home}</strong><small>Waiting for total</small></div>)}</div>
+      </section>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&featured.length>0&&<section className="featuredSection">
+        <div className="sectionTitle">
+          <div><span className="sectionEyebrow">NFL THIS WEEK</span><h2>🔥 Featured Hot Picks</h2></div>
+          <button type="button" onClick={()=>setNflFilter("HOT")}>View top 5 →</button>
         </div>
-        <span>{games.length} {games.length===1?"game":"games"}</span>
-      </div>
-      <div className="gameGrid">
-        {games.map((g,i)=><GameCard g={g} filter={filter} index={i} key={`${g.away}-${g.home}-${g.kickoff}-${filter}`} />)}
-      </div>
+        <div className="featuredGrid">{featured.map((g,i)=><button type="button" className="featuredPick" key={i} onClick={()=>setNflFilter("HOT")}>
+          <span className="featuredRank">#{i+1}</span><span className="featuredTeams">{g.away} @ {g.home}</span><strong className={g.side?.toLowerCase()}>{g.side} {one(g.altLine)}</strong><span>Hot Score {g.hotScore}/100</span>
+        </button>)}</div>
+      </section>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&<nav className="tabBar" aria-label="NFL filters">
+        {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} onClick={()=>setNflFilter(id)}>{label}</button>)}
+      </nav>}
+
+      {error&&<div className="stateBox errorBox">{error}</div>}
+      {!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&<section className="boardSection">
+        <div className="boardHeading"><div><span className="sectionEyebrow">NFL</span><h2>{nflFilter==="ALL"?"Full Board":nflFilter==="HOT"?"Top 5 Hot Picks":`${nflFilter} Picks`}</h2></div><span>{nflGames.length} games</span></div>
+        <div className="gameGrid">{nflGames.map((g,i)=><NflCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+      </section>}
+    </>}
+
+    {sport!=="NFL"&&<section className="otherSportSection">
+      {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}
+
+      {sportBoards[sport]&&sportBoards[sport].status==="OFFSEASON"&&<div className="seasonState">
+        <span className="sectionEyebrow">{sport}</span><h2>Season not active.</h2><p>{sportBoards[sport].message} This tab will activate automatically when the league returns.</p>
+      </div>}
+
+      {sportBoards[sport]&&sportBoards[sport].status==="WAITING"&&<div className="seasonState">
+        <span className="sectionEyebrow">{sport}</span><h2>Waiting for totals.</h2><p>{sportBoards[sport].message}</p>
+      </div>}
+
+      {sportBoards[sport]&&sportBoards[sport].status==="ERROR"&&<div className="stateBox errorBox">{sportBoards[sport].message}</div>}
+
+      {sportBoards[sport]&&sportBoards[sport].status==="ACTIVE"&&<>
+        <section className="sportStatus">
+          <div><span className="sectionEyebrow">{sport}</span><h2>Top {sportBoards[sport].games.length} Totals</h2><p>ALT25 analyzed {sportBoards[sport].slateGames} games in the next slate and surfaced only the strongest three model-rated totals.</p></div>
+          <div className="sportMeta"><span>Odds cache <strong>{sportBoards[sport].cacheHours}h</strong></span><span>Updated <strong>{fmtUpdated(sportBoards[sport].fetchedAt)}</strong></span></div>
+        </section>
+        <div className="gameGrid">{sportBoards[sport].games.map((g,i)=><SportCard g={g} sport={sport} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+      </>}
     </section>}
 
     <footer className="footerRevamp">
-      <div>
-        <strong>ALT25</strong>
-        <span>Hot Score is a ranking score, not a win probability.</span>
-      </div>
-      <p>Model inputs can include market edge, scoring, YPP, pace, red zone, third down, turnovers, weather, injuries and home/away form. Missing data is skipped rather than invented. Odds are cached to protect API usage.</p>
+      <div><strong>ALT25</strong><span>Sports Totals Intelligence</span></div>
+      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. NCAA, NBA, WNBA and MLB use sport-specific recent scoring/defense models and display only the top three totals. Missing data is skipped rather than invented.</p>
     </footer>
   </main>;
 }
