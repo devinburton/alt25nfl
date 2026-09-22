@@ -38,3 +38,9 @@ The ALT25 2.5-point/run cushion is preserved across sports.
 
 ## Required Vercel variable
 ODDS_API_KEY
+
+
+## 2026-09-22 sport-tab route fix
+The dynamic `/api/sport/[sport]` route now awaits Next.js route params before reading the sport name.
+This fixes the non-NFL tabs returning an unknown-sport/404 response on current Next.js versions.
+The NFL model and all Odds API cache settings are unchanged.

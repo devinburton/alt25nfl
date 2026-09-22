@@ -137,7 +137,11 @@ export default function Home(){
     if(sport==="NFL"||sportBoards[sport])return;
     setLoadingSport(sport);
     fetch(`/api/sport/${sport}`,{cache:"no-store"})
-      .then(r=>{if(!r.ok)throw new Error(`Could not load ${sport}.`);return r.json()})
+      .then(async r=>{
+        const body=await r.json().catch(()=>({}));
+        if(!r.ok)throw new Error(body?.error||`Could not load ${sport}.`);
+        return body;
+      })
       .then(d=>setSportBoards(prev=>({...prev,[sport]:d})))
       .catch(e=>setSportBoards(prev=>({...prev,[sport]:{status:"ERROR",message:e.message,games:[]}})))
       .finally(()=>setLoadingSport(""));

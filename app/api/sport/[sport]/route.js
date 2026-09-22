@@ -29,7 +29,8 @@ function chooseSlate(games,mode){
 
 export async function GET(req,{params}){
   try{
-    const id=String(params?.sport||"").toUpperCase();
+    const resolvedParams=await params;
+    const id=String(resolvedParams?.sport||"").toUpperCase();
     const config=SPORT_CONFIG[id];
     if(!config)return NextResponse.json({error:"Unknown sport"},{status:404});
 
