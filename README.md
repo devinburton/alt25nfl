@@ -38,3 +38,24 @@ No additional Odds API markets or regions were added. The new intelligence comes
 
 ## Important
 The non-NFL models are still experimental. Hot Score is a ranking score, not a win probability. Backtesting is the next major step for calibration.
+
+
+## Late-season context v3
+NBA and WNBA now include a conservative standings-based late-season modifier:
+- likely-clinched teams: small downward total adjustment for possible rest/rotation risk
+- bubble/seeding teams: small positive motivation adjustment
+- likely-eliminated teams: Hot Score confidence penalty for rotation volatility
+- visible late-season context note in each affected card
+
+This is deliberately a small modifier. It does not claim to know a coach's exact lineup plan.
+
+
+## All-sports late-season context v4
+The context layer now covers every ALT25 sport:
+- NFL: playoff / seeding / elimination context when standings support it
+- NCAA: conservative late-season record/stakes context only; it does not invent playoff status
+- NBA: playoff / seeding / elimination context
+- WNBA: playoff / seeding / elimination context
+- MLB: playoff / seeding / elimination context with smaller run adjustments
+
+The model treats this as a modifier, not as a replacement for the sport's core totals model. When context is uncertain, confidence is reduced instead of forcing a directional total change.
