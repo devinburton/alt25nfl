@@ -63,3 +63,10 @@ The model treats this as a modifier, not as a replacement for the sport's core t
 
 ## NFL Top 10 WR ALT Matchups
 Added to the NFL page. It identifies the 10 defenses allowing the highest opponent passing yards per completion, checks the current week's upcoming opponents, then ranks qualifying wide receivers using the defensive matchup plus season receiving production. It does not add a paid player-prop market request to The Odds API.
+
+
+## WR matchup bug fix
+Fixed the ESPN schedule parser so each weekly matchup includes `homeId` and `awayId`.
+The WR matchup builder needs those team IDs to retrieve the offense's WR depth chart.
+Without them, the defense filter worked but no WR candidates could be attached, producing
+"No qualifying WR matchups found." The ranking logic and Odds API usage are unchanged.
