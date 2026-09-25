@@ -70,3 +70,12 @@ Fixed the ESPN schedule parser so each weekly matchup includes `homeId` and `awa
 The WR matchup builder needs those team IDs to retrieve the offense's WR depth chart.
 Without them, the defense filter worked but no WR candidates could be attached, producing
 "No qualifying WR matchups found." The ranking logic and Odds API usage are unchanged.
+
+
+## WR matchup v6 reliability fix
+- changed the cache key so the old empty WR result is not reused
+- stopped relying on ESPN's year-wide scoreboard request for prior games
+- explicitly loads recent completed NFL game dates
+- uses current team rosters to identify true WRs
+- calculates each WR's production from actual completed-game receiving boxscores
+- adds diagnostics to the empty-state message so future feed failures can be identified immediately

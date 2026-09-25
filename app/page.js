@@ -239,7 +239,10 @@ export default function Home(){
         </div>
         {!wrBoard&&!wrError&&<div className="stateBox">Building WR matchup board…</div>}
         {wrError&&<div className="stateBox errorBox">{wrError}</div>}
-        {wrBoard&&wrBoard.players?.length===0&&<div className="stateBox">No qualifying WR matchups found yet for this week's upcoming games.</div>}
+        {wrBoard&&wrBoard.players?.length===0&&<div className="stateBox">
+          <strong>No WR cards loaded yet.</strong>
+          <div style={{marginTop:6}}>Week {wrBoard.week} data check: {wrBoard.diagnostics?.completedGamesFound??0} completed games • {wrBoard.diagnostics?.defensesMeasured??0} defenses measured • {wrBoard.diagnostics?.qualifyingOffenses??0} qualifying offenses • {wrBoard.diagnostics?.wrCandidates??0} WR candidates.</div>
+        </div>}
         {wrBoard&&wrBoard.players?.length>0&&<>
           <div className="wrGrid">{wrBoard.players.map(w=><article className="wrCard" key={`${w.rank}-${w.athleteId}`}>
             <div className="wrRank">#{w.rank}</div>
