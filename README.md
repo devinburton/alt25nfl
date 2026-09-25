@@ -59,3 +59,7 @@ The context layer now covers every ALT25 sport:
 - MLB: playoff / seeding / elimination context with smaller run adjustments
 
 The model treats this as a modifier, not as a replacement for the sport's core totals model. When context is uncertain, confidence is reduced instead of forcing a directional total change.
+
+
+## NFL Top 10 WR ALT Matchups
+Added to the NFL page. It identifies the 10 defenses allowing the highest opponent passing yards per completion, checks the current week's upcoming opponents, then ranks qualifying wide receivers using the defensive matchup plus season receiving production. It does not add a paid player-prop market request to The Odds API.

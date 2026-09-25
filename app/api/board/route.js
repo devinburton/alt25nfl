@@ -4,6 +4,7 @@ import{fetchLiveNflTotals}from"../../../lib/liveOdds";
 import{getGameWeather}from"../../../lib/weather";
 import{buildTeamProfile,injuryAdjustment}from"../../../lib/analytics";
 import{analyzeGame}from"../../../lib/model";
+import{getLateSeasonContext,contextAdjustment}from"../../../lib/seasonContext";
 
 export const dynamic="force-dynamic";
 const norm=(s="")=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -100,6 +101,11 @@ export async function GET(){
           awayItems=inj[s.away]||[],
           homeItems=inj[s.home]||[];
 
+    const seasonContext=await getLateSeasonContext({
+      sportId:"NFL",
+      espnPath:"football/nfl",
+      game:s
+    });
     return analyzeGame({
       ...s,
       total:o.total,
@@ -108,7 +114,9 @@ export async function GET(){
       awayProfile,
       homeProfile,
       awayInjury:injuryAdjustment(awayItems),
-      homeInjury:injuryAdjustment(homeItems)
+      homeInjury:injuryAdjustment(homeItems),
+      seasonContext,
+      seasonContextEffect:contextAdjustment(seasonContext)
     })
   }));
 

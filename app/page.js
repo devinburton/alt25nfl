@@ -109,6 +109,7 @@ function SportCard({g,sport}){
       <summary>Why this pick?</summary>
       <div className="whyBody">
         <p className="modelReason">{g.modelNote}</p>
+        {g.seasonContextEffect?.label&&<div className="contextAlert"><strong>Late-season context:</strong> {g.seasonContextEffect.label}</div>}
         <div className="teamStats">
           <div className="teamStatBox"><strong>{g.away}</strong><span>Recent PF {one(g.awayProfile?.pointsFor)}</span><span>Recent PA {one(g.awayProfile?.pointsAllowed)}</span><span>Games {g.awayProfile?.games??0}</span></div>
           <div className="teamStatBox"><strong>{g.home}</strong><span>Recent PF {one(g.homeProfile?.pointsFor)}</span><span>Recent PA {one(g.homeProfile?.pointsAllowed)}</span><span>Games {g.homeProfile?.games??0}</span></div>
@@ -125,12 +126,20 @@ export default function Home(){
   const[nflFilter,setNflFilter]=useState("ALL");
   const[sportBoards,setSportBoards]=useState({});
   const[loadingSport,setLoadingSport]=useState("");
+  const[wrBoard,setWrBoard]=useState(null);
+  const[wrError,setWrError]=useState("");
 
   useEffect(()=>{
     fetch("/api/board",{cache:"no-store"})
       .then(r=>{if(!r.ok)throw new Error("Could not load NFL board.");return r.json()})
       .then(setNfl)
       .catch(e=>setError(e.message));
+  },[]);
+
+  useEffect(()=>{
+    fetch("/api/nfl/wr-matchups",{cache:"no-store"})
+      .then(async r=>{const b=await r.json().catch(()=>({}));if(!r.ok)throw new Error(b?.error||"Could not load WR matchups.");return b})
+      .then(setWrBoard).catch(e=>setWrError(e.message));
   },[]);
 
   useEffect(()=>{
@@ -219,6 +228,30 @@ export default function Home(){
         </button>)}</div>
       </section>}
 
+      {nfl&&nfl.boardMode!=="WAITING"&&<section className="wrSection">
+        <div className="sectionTitle">
+          <div>
+            <span className="sectionEyebrow">NFL RECEIVING MATCHUPS</span>
+            <h2>🎯 Top 10 WR ALT Matchups</h2>
+            <p className="wrIntro">Wide receivers facing a bottom-10 defense in opponent passing yards per completion. Ranked using matchup weakness plus the receiver's season production.</p>
+          </div>
+          {wrBoard&&<span className="wrWeek">Week {wrBoard.week}</span>}
+        </div>
+        {!wrBoard&&!wrError&&<div className="stateBox">Building WR matchup board…</div>}
+        {wrError&&<div className="stateBox errorBox">{wrError}</div>}
+        {wrBoard&&wrBoard.players?.length===0&&<div className="stateBox">No qualifying WR matchups found yet for this week's upcoming games.</div>}
+        {wrBoard&&wrBoard.players?.length>0&&<>
+          <div className="wrGrid">{wrBoard.players.map(w=><article className="wrCard" key={`${w.rank}-${w.athleteId}`}>
+            <div className="wrRank">#{w.rank}</div>
+            <div className="wrMain"><strong>{w.player}</strong><span>{w.team} vs {w.opponent}</span></div>
+            <div className="wrMetric"><span>DEF YDS/COMP</span><strong>{w.oppYardsPerCompletion}</strong><small>Defense rank #{w.defenseRank}</small></div>
+            <div className="wrMetric"><span>REC YDS/G</span><strong>{w.yardsPerGame??"—"}</strong><small>{w.yardsPerReception??"—"} YPR</small></div>
+            <div className="wrMetric score"><span>MATCHUP</span><strong>{w.matchupScore}</strong><small>ranking score</small></div>
+          </article>)}</div>
+          <div className="wrNote">Bottom 10 = the 10 defenses allowing the highest opponent passing yards per completion. Matchup Score is a ranking score, not a probability. No player-prop Odds API market is used.</div>
+        </>}
+      </section>}
+
       {nfl&&nfl.boardMode!=="WAITING"&&<nav className="tabBar" aria-label="NFL filters">
         {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} onClick={()=>setNflFilter(id)}>{label}</button>)}
       </nav>}
@@ -256,7 +289,7 @@ export default function Home(){
 
     <footer className="footerRevamp">
       <div><strong>ALT25</strong><span>Sports Totals Intelligence</span></div>
-      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. NCAA, NBA and WNBA now add recent-form trend, location and rest context; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
+      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. All sports now include late-season context when standings or record data support it. NCAA uses a conservative record-based version; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
     </footer>
   </main>;
 }

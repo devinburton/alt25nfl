@@ -2,6 +2,7 @@ import{NextResponse}from"next/server";
 import{SPORT_CONFIG,fetchSportOdds,isSportActive}from"../../../../lib/multiSportOdds";
 import{getRecentResultsWindow,recentProfile}from"../../../../lib/espnSports";
 import{getMlbGameContext}from"../../../../lib/mlbFreeData";
+import{getLateSeasonContext,contextAdjustment}from"../../../../lib/seasonContext";
 import{analyzeSportGame}from"../../../../lib/sportModel";
 
 function easternDate(iso){
@@ -67,12 +68,22 @@ export async function GET(req,{params}){
     const mlbMap=id==="MLB"?await getMlbGameContext(slate):new Map();
     const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
 
-    const analyzed=slate.map(g=>analyzeSportGame({
-      ...g,
-      awayProfile:recentProfile(g.away,history,g.kickoff,config.recentGames),
-      homeProfile:recentProfile(g.home,history,g.kickoff,config.recentGames),
-      mlbContext:id==="MLB"?mlbMap.get(`${norm(g.away)}-${norm(g.home)}`)||null:null
-    },config));
+    const analyzed=await Promise.all(slate.map(async g=>{
+      const seasonContext=await getLateSeasonContext({
+        sportId:id,
+        espnPath:config.espnPath,
+        game:g
+      });
+
+      return analyzeSportGame({
+        ...g,
+        awayProfile:recentProfile(g.away,history,g.kickoff,config.recentGames),
+        homeProfile:recentProfile(g.home,history,g.kickoff,config.recentGames),
+        mlbContext:id==="MLB"?mlbMap.get(`${norm(g.away)}-${norm(g.home)}`)||null:null,
+        seasonContext,
+        seasonContextEffect:contextAdjustment(seasonContext)
+      },config);
+    }));
 
     const top3=[...analyzed]
       .sort((a,b)=>(b.hotScore||0)-(a.hotScore||0)||Math.abs(b.edge||0)-Math.abs(a.edge||0))
