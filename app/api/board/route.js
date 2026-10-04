@@ -1,9 +1,11 @@
 import{NextResponse}from"next/server";
 import{getCurrentWeekBundle,getSeasonScoreboard,getTeamSummary,parseGameInjuries,getScheduleForDates,getUpcomingSchedule}from"../../../lib/espn";
 import{fetchLiveNflTotals}from"../../../lib/liveOdds";
+import{fetchLiveNflSpreads}from"../../../lib/liveSpreads";
 import{getGameWeather}from"../../../lib/weather";
 import{buildTeamProfile,injuryAdjustment}from"../../../lib/analytics";
 import{analyzeGame}from"../../../lib/model";
+import{analyzeSpreadGame}from"../../../lib/spreadModel";
 import{getLateSeasonContext,contextAdjustment}from"../../../lib/seasonContext";
 
 export const dynamic="force-dynamic";
@@ -22,7 +24,7 @@ function easternWeekday(iso){
 
 export async function GET(){
  try{
-  const [current,oddsBundle]=await Promise.all([getCurrentWeekBundle(),fetchLiveNflTotals()]);
+  const [current,oddsBundle,spreadBundle]=await Promise.all([getCurrentWeekBundle(),fetchLiveNflTotals(),fetchLiveNflSpreads()]);
   const allOdds=(oddsBundle.games||[]).filter(o=>new Date(o.kickoff).getTime()>Date.now()-3*60*60*1000);
 
   // If books have not posted the next slate yet, keep the site alive with upcoming schedule cards.
@@ -76,8 +78,10 @@ export async function GET(){
     return t>=firstKickoff&&t<=fallbackEnd;
   });
 
+  const spreadMap=new Map((spreadBundle.games||[]).map(s=>[keyOf(s),s]));
   const seasonGames=await getSeasonScoreboard(current.year,current.seasonType);
 
+  const spreadCandidates=[];
   const rows=await Promise.all(slateOdds.map(async o=>{
     const s={
       id:o.espnId,
@@ -106,6 +110,24 @@ export async function GET(){
       espnPath:"football/nfl",
       game:s
     });
+    const awayInjury=injuryAdjustment(awayItems);
+    const homeInjury=injuryAdjustment(homeItems);
+
+    const spread=spreadMap.get(keyOf(o));
+    if(spread){
+      const spreadPick=analyzeSpreadGame({
+        ...s,
+        homeSpread:spread.homeSpread,
+        awaySpread:spread.awaySpread,
+        booksCount:spread.booksCount,
+        awayProfile,
+        homeProfile,
+        awayInjury,
+        homeInjury
+      });
+      if(spreadPick)spreadCandidates.push(spreadPick);
+    }
+
     return analyzeGame({
       ...s,
       total:o.total,
@@ -113,8 +135,8 @@ export async function GET(){
       weather,
       awayProfile,
       homeProfile,
-      awayInjury:injuryAdjustment(awayItems),
-      homeInjury:injuryAdjustment(homeItems),
+      awayInjury,
+      homeInjury,
       seasonContext,
       seasonContextEffect:contextAdjustment(seasonContext)
     })
@@ -127,6 +149,11 @@ export async function GET(){
     const k=`${g.away}-${g.home}-${g.kickoff}`;
     return{...g,hotRank:hotIds.get(k)||null,isHot:hotIds.has(k)}
   });
+
+  const spreadPicks=spreadCandidates
+    .sort((a,b)=>(b.matchupScore||0)-(a.matchupScore||0)||(b.edge||0)-(a.edge||0))
+    .slice(0,5)
+    .map((g,i)=>({...g,rank:i+1}));
 
   const nextKickoff=Math.min(...games.map(g=>new Date(g.kickoff).getTime()));
   const hoursToKickoff=(nextKickoff-Date.now())/3600000;
@@ -143,6 +170,9 @@ export async function GET(){
     modelVersion:"always-on-v1",
     altRule:2.5,
     games:decorated,
+    spreadPicks,
+    spreadFetchedAt:spreadBundle.fetchedAt,
+    spreadCacheHours:12,
     upcomingSchedule:[],
   })
  }catch(e){

@@ -14,7 +14,8 @@ const NFL_FILTERS=[
   ["ALL","All Games"],
   ["OVER","Overs"],
   ["UNDER","Unders"],
-  ["HOT","🔥 Hot Picks"]
+  ["HOT","🔥 Hot Picks"],
+  ["SPREAD","🏈 Top 5 Spreads"]
 ];
 
 function fmt(v){
@@ -73,6 +74,45 @@ function NflCard({g}){
 
     <details className="why">
       <summary>Why this pick?</summary>
+      <div className="whyBody"><p className="modelReason">{g.modelNote}</p></div>
+    </details>
+  </article>
+}
+
+function signedLine(v){
+  if(!Number.isFinite(v))return"—";
+  return `${v>0?"+":""}${v.toFixed(1)}`;
+}
+
+function SpreadCard({g}){
+  return <article className="gameCard spreadCard isHot">
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(g.kickoff)}</div>
+        <h3>{g.away} <span>@</span> {g.home}</h3>
+        <div className="cardBadges"><span className="pill emphasis">SPREAD #{g.rank}</span></div>
+      </div>
+      <div className="sideStamp spreadStamp">{g.side}</div>
+    </div>
+
+    <div className="pickHero">
+      <div>
+        <span className="pickEyebrow">ALT25 SPREAD</span>
+        <div className="mainPick spreadPick">{g.side} {signedLine(g.altLine)}</div>
+      </div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+    </div>
+
+    <div className="numbersRow">
+      <div><span>Market</span><strong>{g.side} {signedLine(g.marketLine)}</strong></div>
+      <div><span>ALT25</span><strong>{signedLine(g.altLine)}</strong></div>
+      <div><span>Model edge</span><strong>{one(g.edge)}</strong></div>
+      <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+    </div>
+
+    <ScoreBar score={g.matchupScore}/>
+    <details className="why">
+      <summary>Why this spread?</summary>
       <div className="whyBody"><p className="modelReason">{g.modelNote}</p></div>
     </details>
   </article>
@@ -160,12 +200,37 @@ export default function Home(){
     const list=nfl?.games||[];
     if(nflFilter==="ALL")return list;
     if(nflFilter==="HOT")return list.filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99));
+    if(nflFilter==="SPREAD")return [];
     return list.filter(g=>g.side===nflFilter);
   },[nfl,nflFilter]);
 
   const featured=useMemo(()=>(
     (nfl?.games||[]).filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99)).slice(0,3)
   ),[nfl]);
+
+  const environments=useMemo(()=>{
+    const games=nfl?.games||[];
+    const top=(fn,desc=true)=>[...games].sort((a,b)=>desc?fn(b)-fn(a):fn(a)-fn(b)).slice(0,3);
+    const pace=g=>((g.awayProfile?.plays||0)+(g.homeProfile?.plays||0))/2;
+    const weatherImpact=g=>{
+      const note=String(g.modelNote||"");
+      const m=note.match(/weather\s+(-?\d+(?:\.\d+)?)/i);
+      return m?Math.abs(Number(m[1])):0;
+    };
+    const volatility=g=>{
+      const quality=Number(g.dataQuality)||0;
+      const disagreement=Math.abs((g.awayProfile?.gameTotal||g.total)-(g.homeProfile?.gameTotal||g.total));
+      return (1-quality)*55+Math.min(35,disagreement*2)+weatherImpact(g)*4;
+    };
+    return[
+      {title:"🔥 Shootout Alert",note:"Highest projected scoring environments",games:top(g=>g.projected||0,true),value:g=>`${one(g.projected)} model`},
+      {title:"🧊 Grind Game",note:"Lowest projected scoring environments",games:top(g=>g.projected||0,false),value:g=>`${one(g.projected)} model`},
+      {title:"⚡ Volatility Alert",note:"More uncertainty and scoring disagreement",games:top(volatility,true),value:g=>`Score ${Math.round(volatility(g))}`},
+      {title:"🎯 Strongest Edge",note:"Largest model vs market total gap",games:top(g=>Math.abs(g.edge||0),true),value:g=>`${g.edge>0?"+":""}${one(g.edge)} edge`},
+      {title:"🌦️ Weather Impact",note:"Largest modeled weather effect",games:top(weatherImpact,true),value:g=>g.weather?.label||"Weather neutral"},
+      {title:"🏃 Pace Matchup",note:"Highest combined recent play pace",games:top(pace,true),value:g=>`${one(pace(g))} plays`}
+    ];
+  },[nfl]);
 
   const activeBoard=sport==="NFL"?nfl:sportBoards[sport];
 
@@ -228,11 +293,33 @@ export default function Home(){
         </button>)}</div>
       </section>}
 
+      {nfl&&nfl.boardMode!=="WAITING"&&nfl.games?.length>0&&<section className="environmentSection">
+        <div className="sectionTitle">
+          <div>
+            <span className="sectionEyebrow">NFL GAME ENVIRONMENT</span>
+            <h2>Game Environment Board</h2>
+            <p className="wrIntro">Quick-read rankings built from the same ALT25 totals model — no extra odds market required.</p>
+          </div>
+        </div>
+        <div className="environmentGrid">
+          {environments.map((group,i)=><div className="environmentBox" key={i}>
+            <div className="environmentHead"><strong>{group.title}</strong><span>{group.note}</span></div>
+            <div className="environmentRows">
+              {group.games.map((g,j)=><div className="environmentRow" key={`${group.title}-${j}`}>
+                <span className="envRank">#{j+1}</span>
+                <div><strong>{g.away} @ {g.home}</strong><small>{fmt(g.kickoff)}</small></div>
+                <b>{group.value(g)}</b>
+              </div>)}
+            </div>
+          </div>)}
+        </div>
+      </section>}
+
       {nfl&&nfl.boardMode!=="WAITING"&&<section className="wrSection">
         <div className="sectionTitle">
           <div>
             <span className="sectionEyebrow">NFL RECEIVING MATCHUPS</span>
-            <h2>🎯 Top 10 WR ALT Matchups</h2>
+            <h2>🎯 Top 5 WR ALT Matchups</h2>
             <p className="wrIntro">Wide receivers facing a bottom-10 defense in opponent passing yards per completion. Ranked using matchup weakness plus the receiver's season production.</p>
           </div>
           {wrBoard&&<span className="wrWeek">Week {wrBoard.week}</span>}
@@ -244,7 +331,7 @@ export default function Home(){
           <div style={{marginTop:6}}>Week {wrBoard.week} data check: {wrBoard.diagnostics?.completedGamesFound??0} completed games • {wrBoard.diagnostics?.defensesMeasured??0} defenses measured • {wrBoard.diagnostics?.qualifyingOffenses??0} qualifying offenses • {wrBoard.diagnostics?.wrCandidates??0} WR candidates.</div>
         </div>}
         {wrBoard&&wrBoard.players?.length>0&&<>
-          <div className="wrGrid">{wrBoard.players.map(w=><article className="wrCard" key={`${w.rank}-${w.athleteId}`}>
+          <div className="wrGrid">{wrBoard.players.slice(0,5).map(w=><article className="wrCard" key={`${w.rank}-${w.athleteId}`}>
             <div className="wrRank">#{w.rank}</div>
             <div className="wrMain"><strong>{w.player}</strong><span>{w.team} vs {w.opponent}</span></div>
             <div className="wrMetric"><span>DEF YDS/COMP</span><strong>{w.oppYardsPerCompletion}</strong><small>Defense rank #{w.defenseRank}</small></div>
@@ -262,9 +349,19 @@ export default function Home(){
       {error&&<div className="stateBox errorBox">{error}</div>}
       {!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&<section className="boardSection">
+      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter!=="SPREAD"&&<section className="boardSection">
         <div className="boardHeading"><div><span className="sectionEyebrow">NFL</span><h2>{nflFilter==="ALL"?"Full Board":nflFilter==="HOT"?"Top 5 Hot Picks":`${nflFilter} Picks`}</h2></div><span>{nflGames.length} games</span></div>
         <div className="gameGrid">{nflGames.map((g,i)=><NflCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+      </section>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="SPREAD"&&<section className="boardSection">
+        <div className="boardHeading">
+          <div><span className="sectionEyebrow">NFL SPREADS</span><h2>🏈 Top 5 Best Spreads</h2><p className="wrIntro">Consensus spread market ranked with recent scoring margin, home/away context and injury pressure. ALT25 shifts the selected side 2.5 points in its favor.</p></div>
+          <span>{nfl.spreadPicks?.length||0} picks</span>
+        </div>
+        {(!nfl.spreadPicks||nfl.spreadPicks.length===0)&&<div className="stateBox">Spread lines are not available yet for this slate.</div>}
+        <div className="gameGrid">{(nfl.spreadPicks||[]).map((g,i)=><SpreadCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+        <div className="wrNote">Spread Matchup Score is a ranking score, not a win probability. Spread odds use a separate 12-hour cache to keep Odds API usage very low.</div>
       </section>}
     </>}
 

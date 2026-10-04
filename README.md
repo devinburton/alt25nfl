@@ -79,3 +79,20 @@ Without them, the defense filter worked but no WR candidates could be attached, 
 - uses current team rosters to identify true WRs
 - calculates each WR's production from actual completed-game receiving boxscores
 - adds diagnostics to the empty-state message so future feed failures can be identified immediately
+
+
+## NFL upgrades v7
+- NFL Game Environment board:
+  - Shootout Alert
+  - Grind Game
+  - Volatility Alert
+  - Strongest Edge
+  - Weather Impact
+  - Pace Matchup
+  - all six use the existing NFL totals/model data and add no new odds market
+- WR ALT Matchups reduced from Top 10 to Top 5
+- New NFL "Top 5 Spreads" tab
+  - uses a separate spreads-only Odds API request cached for 12 hours
+  - ranks sides using market spread, recent scoring margin, home/away context, injuries, and consensus depth
+  - shifts the recommended side 2.5 points in its favor for the displayed ALT25 line
+  - Matchup Score is a ranking score, not a probability
