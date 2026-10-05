@@ -146,31 +146,122 @@ function MoneylineCard({g,gapMode=false}){
   const price=Number(g.price);
   const signed=Number.isFinite(price)?`${price>0?"+":""}${Math.round(price)}`:"—";
   return <article className={`gameCard ${gapMode?"gapCard":""}`}>
-    <div className="cardHead"><div className="cardHeadMain"><div className="kickoff">{fmt(g.kickoff)}</div><h3>{g.away} <span>@</span> {g.home}</h3><div className="cardBadges"><span className="pill emphasis">{gapMode?"PROBABILITY GAP":"MONEYLINE"}</span>{g.rank&&<span className="pill">#{g.rank}</span>}</div></div><div className="sideStamp spreadStamp">{g.side}</div></div>
-    <div className="pickHero"><div><span className="pickEyebrow">{gapMode?"VALUE PLAY":"ALT25 MONEYLINE"}</span><div className="mainPick spreadPick">{g.side} ML {signed}</div></div><div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div></div>
-    <div className="numbersRow"><div><span>Market implied</span><strong>{one(g.marketProb)}%</strong></div><div><span>ALT25 estimate</span><strong>{one(g.modelProb)}%</strong></div><div><span>Probability gap</span><strong>{g.probabilityGap>0?"+":""}{one(g.probabilityGap)}%</strong></div><div><span>Fair price</span><strong>{Number.isFinite(g.fairPrice)?`${g.fairPrice>0?"+":""}${g.fairPrice}`:"—"}</strong></div></div>
-    <ScoreBar score={g.matchupScore}/><details className="why"><summary>Why this moneyline?</summary><div className="whyBody"><p className="modelReason">{g.modelNote}</p></div></details>
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(g.kickoff)}</div>
+        <h3>{g.away} <span>@</span> {g.home}</h3>
+        <div className="cardBadges">
+          <span className="pill emphasis">{gapMode?"PROBABILITY GAP":"MONEYLINE"}</span>
+          {g.rank&&<span className="pill">#{g.rank}</span>}
+        </div>
+      </div>
+      <div className="sideStamp spreadStamp">{g.side}</div>
+    </div>
+
+    <div className="pickHero">
+      <div>
+        <span className="pickEyebrow">{gapMode?"VALUE PLAY":"ALT25 MONEYLINE"}</span>
+        <div className="mainPick spreadPick">{g.side} ML {signed}</div>
+      </div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+    </div>
+
+    <div className="numbersRow">
+      <div><span>Market implied</span><strong>{one(g.marketProb)}%</strong></div>
+      <div><span>ALT25 estimate</span><strong>{one(g.modelProb)}%</strong></div>
+      <div><span>Probability gap</span><strong>{g.probabilityGap>0?"+":""}{one(g.probabilityGap)}%</strong></div>
+      <div><span>Fair price</span><strong>{Number.isFinite(g.fairPrice)?`${g.fairPrice>0?"+":""}${g.fairPrice}`:"—"}</strong></div>
+    </div>
+
+    <ScoreBar score={g.matchupScore}/>
+    <details className="why">
+      <summary>Why this moneyline?</summary>
+      <div className="whyBody"><p className="modelReason">{g.modelNote}</p></div>
+    </details>
   </article>
 }
 
 function GamePlayCard({pick}){
-  const g=pick.game,stage=nflMaturityStage();
-  const adjustedScore=maturityAdjustedScore(g,pick.score),adjustedConfidence=adjustedScore>=78?"High":adjustedScore>=60?"Medium":"Low";
+  const g=pick.game;
+  const stage=nflMaturityStage();
+  const adjustedScore=maturityAdjustedScore(g,pick.score);
+  const adjustedConfidence=adjustedScore>=78?"High":adjustedScore>=60?"Medium":"Low";
+
   let playText="",marketLabel=pick.type;
-  if(pick.type==="SPREAD"){playText=`${g.side} ${signedLine(g.altLine)}`;marketLabel="SPREAD";}
-  else if(pick.type==="ML"){const price=Number(g.price);playText=`${g.side} ML ${Number.isFinite(price)?`${price>0?"+":""}${Math.round(price)}`:""}`;marketLabel="MONEYLINE";}
-  else if(pick.type==="PROP"){playText=`${pick.player} ${pick.target}+ ${pick.metric}`;marketLabel="PLAYER PROP";}
-  else{playText=`${g.side} ${one(g.altLine)}`;marketLabel="TOTAL";}
+  if(pick.type==="SPREAD"){
+    playText=`${g.side} ${signedLine(g.altLine)}`;
+    marketLabel="SPREAD";
+  }else if(pick.type==="ML"){
+    const price=Number(g.price);
+    playText=`${g.side} ML ${Number.isFinite(price)?`${price>0?"+":""}${Math.round(price)}`:""}`;
+    marketLabel="MONEYLINE";
+  }else if(pick.type==="PROP"){
+    playText=`${pick.player} ${pick.target}+ ${pick.metric}`;
+    marketLabel="PLAYER PROP";
+  }else{
+    playText=`${g.side} ${one(g.altLine)}`;
+    marketLabel="TOTAL";
+  }
+
   return <article className="gameCard weeklyBestCard">
-    <div className="cardHead"><div className="cardHeadMain"><div className="kickoff">{fmt(g.kickoff)}</div><h3>{g.away} <span>@</span> {g.home}</h3><div className="cardBadges"><span className="pill emphasis">{stage.label}</span><span className="pill">{marketLabel}</span><span className="pill">Model Score {adjustedScore}</span></div></div></div>
-    <div className="pickHero"><div><span className="pickEyebrow">BEST MODEL-RATED PLAY</span><div className="mainPick spreadPick">{playText}</div></div><div className="confidenceBox"><span>Confidence</span><strong>{adjustedConfidence}</strong></div></div>
-    {pick.type==="ML"&&<div className="numbersRow"><div><span>Market implied</span><strong>{one(g.marketProb)}%</strong></div><div><span>ALT25 estimate</span><strong>{one(g.modelProb)}%</strong></div><div><span>Probability gap</span><strong>{g.probabilityGap>0?"+":""}{one(g.probabilityGap)}%</strong></div><div><span>Fair price</span><strong>{Number.isFinite(g.fairPrice)?`${g.fairPrice>0?"+":""}${g.fairPrice}`:"—"}</strong></div></div>}
-    {pick.type==="SPREAD"&&<div className="numbersRow"><div><span>Market spread</span><strong>{g.side} {signedLine(g.marketLine)}</strong></div><div><span>ALT25 line</span><strong>{signedLine(g.altLine)}</strong></div><div><span>Model edge</span><strong>{one(g.edge)}</strong></div><div><span>Books</span><strong>{g.booksCount??"—"}</strong></div></div>}
-    {pick.type==="TOTAL"&&<div className="numbersRow"><div><span>Market total</span><strong>{one(g.total)}</strong></div><div><span>ALT25 line</span><strong>{one(g.altLine)}</strong></div><div><span>Model edge</span><strong>{g.edge>0?"+":""}{one(g.edge)}</strong></div><div><span>Books</span><strong>{g.booksCount??"—"}</strong></div></div>}
-    {pick.type==="PROP"&&<div className="numbersRow"><div><span>Receiver</span><strong>{pick.player}</strong></div><div><span>ALT target</span><strong>{pick.target}+ yds</strong></div><div><span>Season Y/G</span><strong>{one(pick.yardsPerGame)}</strong></div><div><span>Type</span><strong>ALT target</strong></div></div>}
-    <ScoreBar score={adjustedScore}/><div className="maturityNote"><strong>{stage.label}</strong> — {stage.detail}</div>
-    {pick.type==="PROP"&&<div className="maturityNote"><strong>PROP NOTE</strong> — Model-generated conservative ALT target, not a live sportsbook prop price. Check availability at your book.</div>}
-    <details className="why"><summary>Why this play?</summary><div className="whyBody"><p className="modelReason">{pick.type==="PROP"?"WR production + defense yards/completion matchup + conservative ALT target":g.modelNote}</p><p className="weeklyWhy">ALT25 compared total, spread, moneyline and eligible player-prop signals for this matchup and surfaced the strongest-rated option.</p></div></details>
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(g.kickoff)}</div>
+        <h3>{g.away} <span>@</span> {g.home}</h3>
+        <div className="cardBadges">
+          <span className="pill emphasis">{stage.label}</span>
+          <span className="pill">{marketLabel}</span>
+          <span className="pill">Model Score {adjustedScore}</span>
+        </div>
+      </div>
+    </div>
+
+    <div className="pickHero">
+      <div>
+        <span className="pickEyebrow">BEST MODEL-RATED PLAY</span>
+        <div className="mainPick spreadPick">{playText}</div>
+      </div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{adjustedConfidence}</strong></div>
+    </div>
+
+    {pick.type==="ML"&&<div className="numbersRow">
+      <div><span>Market implied</span><strong>{one(g.marketProb)}%</strong></div>
+      <div><span>ALT25 estimate</span><strong>{one(g.modelProb)}%</strong></div>
+      <div><span>Probability gap</span><strong>{g.probabilityGap>0?"+":""}{one(g.probabilityGap)}%</strong></div>
+      <div><span>Fair price</span><strong>{Number.isFinite(g.fairPrice)?`${g.fairPrice>0?"+":""}${g.fairPrice}`:"—"}</strong></div>
+    </div>}
+
+    {pick.type==="SPREAD"&&<div className="numbersRow">
+      <div><span>Market spread</span><strong>{g.side} {signedLine(g.marketLine)}</strong></div>
+      <div><span>ALT25 line</span><strong>{signedLine(g.altLine)}</strong></div>
+      <div><span>Model edge</span><strong>{one(g.edge)}</strong></div>
+      <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+    </div>}
+
+    {pick.type==="TOTAL"&&<div className="numbersRow">
+      <div><span>Market total</span><strong>{one(g.total)}</strong></div>
+      <div><span>ALT25 line</span><strong>{one(g.altLine)}</strong></div>
+      <div><span>Model edge</span><strong>{g.edge>0?"+":""}{one(g.edge)}</strong></div>
+      <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+    </div>}
+
+    {pick.type==="PROP"&&<div className="numbersRow">
+      <div><span>Receiver</span><strong>{pick.player}</strong></div>
+      <div><span>ALT target</span><strong>{pick.target}+ yds</strong></div>
+      <div><span>Season Y/G</span><strong>{one(pick.yardsPerGame)}</strong></div>
+      <div><span>Type</span><strong>ALT target</strong></div>
+    </div>}
+
+    <ScoreBar score={adjustedScore}/>
+    <div className="maturityNote"><strong>{stage.label}</strong> — {stage.detail}</div>
+    {pick.type==="PROP"&&<div className="maturityNote"><strong>PROP NOTE</strong> — This is a model-generated conservative ALT target, not a live sportsbook prop price. Check that the line is available at your book before betting.</div>}
+    <details className="why">
+      <summary>Why this play?</summary>
+      <div className="whyBody">
+        <p className="modelReason">{pick.type==="PROP"?"WR production + defense yards/completion matchup + conservative ALT target":g.modelNote}</p>
+        <p className="weeklyWhy">ALT25 compared total, spread, moneyline and eligible player-prop signals for this matchup and surfaced the strongest-rated option. Early-week scores are intentionally discounted while information is still developing.</p>
+      </div>
+    </details>
   </article>
 }
 
@@ -261,30 +352,58 @@ export default function Home(){
   },[nfl,nflFilter]);
 
   const weeklyBestPlays=useMemo(()=>{
-    const totals=nfl?.games||[],spreads=nfl?.spreadBoard||[],moneylines=nfl?.moneylineBoard||[],wrs=wrBoard?.players||[];
+    const totals=nfl?.games||[];
+    const spreads=nfl?.spreadBoard||[];
+    const moneylines=nfl?.moneylineBoard||[];
+    const wrs=wrBoard?.players||[];
+
     const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
     const key=g=>`${norm(g.away)}-${norm(g.home)}`;
-    const spreadMap=new Map(spreads.map(g=>[key(g),g])),moneyMap=new Map(moneylines.map(g=>[key(g),g]));
+    const spreadMap=new Map(spreads.map(g=>[key(g),g]));
+    const moneyMap=new Map(moneylines.map(g=>[key(g),g]));
+
     const wrByGame=new Map();
     for(const w of wrs){
       const team=norm(w.team),opp=norm(w.opponent);
-      const game=totals.find(g=>{const a=norm(g.away),h=norm(g.home);return(a.includes(team)||h.includes(team))&&(a.includes(opp)||h.includes(opp))});
+      const game=totals.find(g=>{
+        const a=norm(g.away),h=norm(g.home);
+        return (a.includes(team)||h.includes(team))&&(a.includes(opp)||h.includes(opp));
+      });
       if(!game)continue;
-      const ypg=Number(w.yardsPerGame)||0; let target=null;
-      if(ypg>=80)target=50; else if(ypg>=65)target=40; else if(ypg>=50)target=25;
+
+      const ypg=Number(w.yardsPerGame)||0;
+      let target=null;
+      if(ypg>=80)target=50;
+      else if(ypg>=65)target=40;
+      else if(ypg>=50)target=25;
       if(!target)continue;
+
       const score=Math.round(Math.min(92,(Number(w.matchupScore)||0)*.72+Math.min(24,ypg/4)));
-      const k=key(game),prev=wrByGame.get(k);
-      if(!prev||score>prev.score)wrByGame.set(k,{type:"PROP",score,game,player:w.player,target,metric:"Receiving Yards",team:w.team,yardsPerGame:ypg});
+      const k=key(game);
+      const prev=wrByGame.get(k);
+      if(!prev||score>prev.score){
+        wrByGame.set(k,{type:"PROP",score,game,player:w.player,target,metric:"Receiving Yards",team:w.team,yardsPerGame:ypg});
+      }
     }
+
     return totals.map(total=>{
-      const k=key(total),candidates=[{type:"TOTAL",score:Number(total.hotScore)||0,game:total}];
-      const spread=spreadMap.get(k); if(spread)candidates.push({type:"SPREAD",score:Number(spread.matchupScore)||0,game:spread});
-      const ml=moneyMap.get(k); if(ml)candidates.push({type:"ML",score:Number(ml.matchupScore)||0,game:ml});
-      const prop=wrByGame.get(k); if(prop&&prop.score>=82)candidates.push(prop);
+      const k=key(total);
+      const candidates=[{type:"TOTAL",score:Number(total.hotScore)||0,game:total}];
+
+      const spread=spreadMap.get(k);
+      if(spread)candidates.push({type:"SPREAD",score:Number(spread.matchupScore)||0,game:spread});
+
+      const ml=moneyMap.get(k);
+      if(ml)candidates.push({type:"ML",score:Number(ml.matchupScore)||0,game:ml});
+
+      const prop=wrByGame.get(k);
+      if(prop&&prop.score>=82)candidates.push(prop);
+
       candidates.sort((a,b)=>b.score-a.score);
-      const top=candidates[0],marketCandidate=candidates.find(c=>c.type!=="PROP");
-      if(top?.type==="PROP"&&marketCandidate&&top.score<marketCandidate.score+6)return marketCandidate;
+
+      const top=candidates[0];
+      const established=candidates.find(c=>c.type!=="PROP");
+      if(top?.type==="PROP"&&established&&top.score<established.score+6)return established;
       return top;
     }).filter(Boolean).sort((a,b)=>new Date(a.game.kickoff)-new Date(b.game.kickoff));
   },[nfl,wrBoard]);
@@ -439,10 +558,17 @@ export default function Home(){
       </section>}
 
       {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="GAP"&&<section className="boardSection gapSection">
-        <div className="boardHeading"><div><span className="sectionEyebrow">NFL VALUE MODEL</span><h2>⚡ Probability Gap</h2><p className="wrIntro">Moneylines ranked by the gap between the market's no-vig implied probability and ALT25's estimated win probability.</p></div><span>{nfl.probabilityGapPicks?.length||0} plays</span></div>
+        <div className="boardHeading">
+          <div>
+            <span className="sectionEyebrow">NFL VALUE MODEL</span>
+            <h2>⚡ Probability Gap</h2>
+            <p className="wrIntro">Moneylines ranked by the gap between the market's no-vig implied probability and ALT25's estimated win probability.</p>
+          </div>
+          <span>{nfl.probabilityGapPicks?.length||0} plays</span>
+        </div>
         {(!nfl.probabilityGapPicks||nfl.probabilityGapPicks.length===0)&&<div className="stateBox">No positive moneyline probability gaps are available yet.</div>}
         <div className="gameGrid">{(nfl.probabilityGapPicks||[]).map((g,i)=><MoneylineCard g={g} gapMode={true} key={`${g.away}-${g.home}-${i}`}/>)}</div>
-        <div className="wrNote">Probability Gap = ALT25 estimated win probability minus the market's no-vig implied probability. Estimates are not guarantees. Moneylines share the existing 12-hour spreads cache.</div>
+        <div className="wrNote">Probability Gap = ALT25 estimated win probability minus the market's no-vig implied probability. Estimated probability is model output, not a guarantee. Moneylines share the 12-hour spreads cache.</div>
       </section>}
 
       {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="SPREAD"&&<section className="boardSection">

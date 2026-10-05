@@ -134,10 +134,9 @@ the "Best Play Each Game" card. Normal NFL cards now use `g.confidence`, while w
 cards use the maturity-adjusted confidence as intended.
 
 
-## Full-game Best Play + Probability Gap v10
-- Best Play Each Game now compares Total, Spread, Moneyline, and eligible conservative WR receiving-yard ALT targets.
-- Moneylines are fetched together with spreads on the existing 12-hour cache.
-- Probability Gap compares ALT25 estimated win probability with no-vig market implied probability.
-- New Probability Gap tab shows up to five positive moneyline gaps.
-- Player-prop ALT targets reuse free WR matchup data and do not request paid prop markets; availability must be checked at the sportsbook.
-- Model probabilities are estimates, not guarantees.
+## v10 fixed package
+- Adds NFL Probability Gap tab.
+- Best Play Each Game now compares Total, Spread, Moneyline, and eligible WR ALT receiving targets.
+- Moneylines share the existing 12-hour spread fetch using `spreads,h2h`.
+- Probability Gap uses no-vig implied probability vs ALT25 estimated probability.
+- Player ALT targets use existing free WR matchup data and are clearly labeled as model-generated targets.

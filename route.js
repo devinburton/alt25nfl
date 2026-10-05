@@ -135,7 +135,10 @@ export async function GET(){
         awayMl:spread.awayMl,
         booksCount:spread.booksCount,
         projectedMargin:spreadPick?.projectedMargin,
-        awayProfile,homeProfile,awayInjury,homeInjury
+        awayProfile,
+        homeProfile,
+        awayInjury,
+        homeInjury
       });
       if(mlPick)moneylineCandidates.push(mlPick);
     }
@@ -171,7 +174,10 @@ export async function GET(){
   const moneylineBoard=moneylineCandidates
     .sort((a,b)=>(b.probabilityGap||0)-(a.probabilityGap||0)||(b.matchupScore||0)-(a.matchupScore||0))
     .map((g,i)=>({...g,rank:i+1}));
-  const probabilityGapPicks=moneylineBoard.filter(g=>g.probabilityGap>0).slice(0,5);
+
+  const probabilityGapPicks=moneylineBoard
+    .filter(g=>g.probabilityGap>0)
+    .slice(0,5);
 
   const nextKickoff=Math.min(...games.map(g=>new Date(g.kickoff).getTime()));
   const hoursToKickoff=(nextKickoff-Date.now())/3600000;

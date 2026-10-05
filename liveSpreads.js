@@ -31,6 +31,7 @@ async function fetchSpreadsRaw(){
         if(Number.isFinite(home?.point))homePoints.push(Number(home.point));
         if(Number.isFinite(away?.point))awayPoints.push(Number(away.point));
       }
+
       const mlMarket=(b.markets||[]).find(x=>x.key==="h2h");
       if(mlMarket){
         const home=mlMarket.outcomes?.find(x=>x.name===e.home_team);
@@ -51,7 +52,10 @@ async function fetchSpreadsRaw(){
       awayMl:median(awayMl),
       booksCount:Math.max(homePoints.length,awayPoints.length,homeMl.length,awayMl.length)
     };
-  }).filter(x=>(Number.isFinite(x.homeSpread)&&Number.isFinite(x.awaySpread))||(Number.isFinite(x.homeMl)&&Number.isFinite(x.awayMl)));
+  }).filter(x=>
+    (Number.isFinite(x.homeSpread)&&Number.isFinite(x.awaySpread)) ||
+    (Number.isFinite(x.homeMl)&&Number.isFinite(x.awayMl))
+  );
 
   return{games,fetchedAt:new Date().toISOString()};
 }
