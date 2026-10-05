@@ -15,7 +15,9 @@ const NFL_FILTERS=[
   ["OVER","Overs"],
   ["UNDER","Unders"],
   ["HOT","🔥 Hot Picks"],
-  ["SPREAD","🏈 Top 5 Spreads"]
+  ["SPREAD","🏈 Top 5 Spreads"],
+  ["WR","🎯 Top 5 WR"],
+  ["GAME","⭐ Best Play Each Game"]
 ];
 
 function fmt(v){
@@ -60,7 +62,7 @@ function NflCard({g}){
 
     <div className="pickHero">
       <div><span className="pickEyebrow">ALT25 PLAY</span><div className={`mainPick ${g.side?.toLowerCase()}`}>{g.side} {one(g.altLine)}</div></div>
-      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{adjustedConfidence}</strong></div>
     </div>
 
     <div className="numbersRow">
@@ -82,6 +84,27 @@ function NflCard({g}){
 function signedLine(v){
   if(!Number.isFinite(v))return"—";
   return `${v>0?"+":""}${v.toFixed(1)}`;
+}
+
+function nflMaturityStage(){
+  const day=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short"}).format(new Date());
+  if(["Mon","Tue","Wed"].includes(day))return{label:"EARLY LEAN",penalty:8,detail:"Early-week information is still developing."};
+  if(["Thu","Fri"].includes(day))return{label:"MODEL PICK",penalty:3,detail:"More injury and market information is available."};
+  return{label:"FINAL PICK",penalty:0,detail:"Late-week information is at its most mature."};
+}
+
+function maturityAdjustedScore(g,baseScore){
+  const stage=nflMaturityStage();
+  let penalty=stage.penalty;
+
+  const books=Number(g?.booksCount)||0;
+  if(books>0&&books<5)penalty+=4;
+
+  const note=String(g?.modelNote||"").toLowerCase();
+  if(note.includes("weather developing"))penalty+=3;
+  if(note.includes("injuries developing"))penalty+=3;
+
+  return Math.max(0,Math.round((Number(baseScore)||0)-penalty));
 }
 
 function SpreadCard({g}){
@@ -114,6 +137,63 @@ function SpreadCard({g}){
     <details className="why">
       <summary>Why this spread?</summary>
       <div className="whyBody"><p className="modelReason">{g.modelNote}</p></div>
+    </details>
+  </article>
+}
+
+function GamePlayCard({pick}){
+  const isSpread=pick.type==="SPREAD";
+  const g=pick.game;
+  const stage=nflMaturityStage();
+  const adjustedScore=maturityAdjustedScore(g,pick.score);
+  const adjustedConfidence=adjustedScore>=78?"High":adjustedScore>=60?"Medium":"Low";
+  return <article className="gameCard weeklyBestCard">
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(g.kickoff)}</div>
+        <h3>{g.away} <span>@</span> {g.home}</h3>
+        <div className="cardBadges">
+          <span className="pill emphasis">{stage.label}</span>
+          <span className="pill">{isSpread?"SPREAD":"TOTAL"} PLAY</span>
+          <span className="pill">Model Score {adjustedScore}</span>
+        </div>
+      </div>
+    </div>
+
+    <div className="pickHero">
+      <div>
+        <span className="pickEyebrow">BEST MODEL-RATED PLAY</span>
+        <div className={`mainPick ${isSpread?"spreadPick":g.side?.toLowerCase()}`}>
+          {isSpread
+            ? `${g.side} ${signedLine(g.altLine)}`
+            : `${g.side} ${one(g.altLine)}`}
+        </div>
+      </div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+    </div>
+
+    <div className="numbersRow">
+      {isSpread?<>
+        <div><span>Market spread</span><strong>{g.side} {signedLine(g.marketLine)}</strong></div>
+        <div><span>ALT25 line</span><strong>{signedLine(g.altLine)}</strong></div>
+        <div><span>Model edge</span><strong>{one(g.edge)}</strong></div>
+        <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+      </>:<>
+        <div><span>Market total</span><strong>{one(g.total)}</strong></div>
+        <div><span>ALT25 line</span><strong>{one(g.altLine)}</strong></div>
+        <div><span>Model edge</span><strong>{g.edge>0?"+":""}{one(g.edge)}</strong></div>
+        <div><span>Books</span><strong>{g.booksCount??"—"}</strong></div>
+      </>}
+    </div>
+
+    <ScoreBar score={adjustedScore}/>
+    <div className="maturityNote"><strong>{stage.label}</strong> — {stage.detail}</div>
+    <details className="why">
+      <summary>Why this play?</summary>
+      <div className="whyBody">
+        <p className="modelReason">{g.modelNote}</p>
+        <p className="weeklyWhy">ALT25 compared the available total and spread model scores for this matchup and surfaced the stronger-rated option. Early-week scores are intentionally discounted when market depth, weather, or injury information is still developing.</p>
+      </div>
     </details>
   </article>
 }
@@ -200,13 +280,31 @@ export default function Home(){
     const list=nfl?.games||[];
     if(nflFilter==="ALL")return list;
     if(nflFilter==="HOT")return list.filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99));
-    if(nflFilter==="SPREAD")return [];
+    if(["SPREAD","WR","GAME"].includes(nflFilter))return [];
     return list.filter(g=>g.side===nflFilter);
   },[nfl,nflFilter]);
 
-  const featured=useMemo(()=>(
-    (nfl?.games||[]).filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99)).slice(0,3)
-  ),[nfl]);
+  const weeklyBestPlays=useMemo(()=>{
+    const totals=nfl?.games||[];
+    const spreads=nfl?.spreadBoard||[];
+
+    const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    const key=g=>`${norm(g.away)}-${norm(g.home)}`;
+    const spreadMap=new Map(spreads.map(g=>[key(g),g]));
+
+    return totals.map(total=>{
+      const spread=spreadMap.get(key(total));
+      const totalScore=Number(total.hotScore)||0;
+      const spreadScore=Number(spread?.matchupScore)||0;
+
+      // Totals model is the older/deeper ALT25 model, so a spread needs
+      // a small score advantage before replacing it as the game's best play.
+      if(spread && spreadScore>totalScore+3){
+        return{type:"SPREAD",score:spreadScore,game:spread};
+      }
+      return{type:"TOTAL",score:totalScore,game:total};
+    }).sort((a,b)=>new Date(a.game.kickoff)-new Date(b.game.kickoff));
+  },[nfl]);
 
   const environments=useMemo(()=>{
     const games=nfl?.games||[];
@@ -283,16 +381,6 @@ export default function Home(){
         <div className="previewGrid">{nfl.upcomingSchedule.map((g,i)=><div className="previewCard" key={i}><span>{fmt(g.kickoff)}</span><strong>{g.away} @ {g.home}</strong><small>Waiting for total</small></div>)}</div>
       </section>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&featured.length>0&&<section className="featuredSection">
-        <div className="sectionTitle">
-          <div><span className="sectionEyebrow">NFL THIS WEEK</span><h2>🔥 Featured Hot Picks</h2></div>
-          <button type="button" onClick={()=>setNflFilter("HOT")}>View top 5 →</button>
-        </div>
-        <div className="featuredGrid">{featured.map((g,i)=><button type="button" className="featuredPick" key={i} onClick={()=>setNflFilter("HOT")}>
-          <span className="featuredRank">#{i+1}</span><span className="featuredTeams">{g.away} @ {g.home}</span><strong className={g.side?.toLowerCase()}>{g.side} {one(g.altLine)}</strong><span>Hot Score {g.hotScore}/100</span>
-        </button>)}</div>
-      </section>}
-
       {nfl&&nfl.boardMode!=="WAITING"&&nfl.games?.length>0&&<section className="environmentSection">
         <div className="sectionTitle">
           <div>
@@ -315,7 +403,11 @@ export default function Home(){
         </div>
       </section>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&<section className="wrSection">
+      {nfl&&nfl.boardMode!=="WAITING"&&<nav className="tabBar" aria-label="NFL filters">
+        {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} onClick={()=>setNflFilter(id)}>{label}</button>)}
+      </nav>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="WR"&&<section className="wrSection">
         <div className="sectionTitle">
           <div>
             <span className="sectionEyebrow">NFL RECEIVING MATCHUPS</span>
@@ -338,18 +430,27 @@ export default function Home(){
             <div className="wrMetric"><span>REC YDS/G</span><strong>{w.yardsPerGame??"—"}</strong><small>{w.yardsPerReception??"—"} YPR</small></div>
             <div className="wrMetric score"><span>MATCHUP</span><strong>{w.matchupScore}</strong><small>ranking score</small></div>
           </article>)}</div>
-          <div className="wrNote">Bottom 10 = the 10 defenses allowing the highest opponent passing yards per completion. Matchup Score is a ranking score, not a probability. No player-prop Odds API market is used.</div>
+          <div className="wrNote">Matchup Score is a ranking score, not a win probability. No player-prop Odds API market is used.</div>
         </>}
       </section>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&<nav className="tabBar" aria-label="NFL filters">
-        {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} onClick={()=>setNflFilter(id)}>{label}</button>)}
-      </nav>}
+      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="GAME"&&<section className="boardSection weeklyBestSection">
+        <div className="boardHeading">
+          <div>
+            <span className="sectionEyebrow">NFL WEEK {nfl.week}</span>
+            <h2>⭐ Best Play Each Game</h2>
+            <p className="wrIntro">One model-rated play for every matchup on the current weekly board. Monday–Wednesday shows EARLY LEAN, Thursday–Friday shows MODEL PICK, and Saturday–Sunday shows FINAL PICK. Early-week scores are deliberately more conservative.</p>
+          </div>
+          <span>{weeklyBestPlays.length} games</span>
+        </div>
+        <div className="gameGrid">{weeklyBestPlays.map((pick,i)=><GamePlayCard pick={pick} key={`${pick.game.away}-${pick.game.home}-${i}`}/>)}</div>
+        <div className="wrNote">Model Score is a ranking score, not a calibrated probability of winning. Early-week maturity penalties reduce scores while weather, injuries, and sportsbook consensus are still developing. Missing spread data falls back to the ALT25 total play for that matchup.</div>
+      </section>}
 
       {error&&<div className="stateBox errorBox">{error}</div>}
       {!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter!=="SPREAD"&&<section className="boardSection">
+      {nfl&&nfl.boardMode!=="WAITING"&&!["SPREAD","WR","GAME"].includes(nflFilter)&&<section className="boardSection">
         <div className="boardHeading"><div><span className="sectionEyebrow">NFL</span><h2>{nflFilter==="ALL"?"Full Board":nflFilter==="HOT"?"Top 5 Hot Picks":`${nflFilter} Picks`}</h2></div><span>{nflGames.length} games</span></div>
         <div className="gameGrid">{nflGames.map((g,i)=><NflCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
       </section>}

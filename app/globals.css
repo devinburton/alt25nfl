@@ -188,3 +188,9 @@ button{color:inherit}
 .spreadStamp{max-width:170px;font-size:10px;text-align:right}
 .spreadPick{color:var(--gold2)}
 @media(max-width:760px){.environmentGrid{grid-template-columns:1fr}}
+
+.weeklyBestSection{padding-top:20px}
+.weeklyBestCard .weeklyWhy{margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+
+.maturityNote{margin:10px 0 0;padding:9px 10px;border:1px solid rgba(214,169,75,.22);background:rgba(214,169,75,.05);border-radius:9px;color:var(--muted);font-size:9px;line-height:1.45}
+.maturityNote strong{color:var(--gold2)}

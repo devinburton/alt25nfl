@@ -96,3 +96,32 @@ Without them, the defense filter worked but no WR candidates could be attached, 
   - ranks sides using market spread, recent scoring margin, home/away context, injuries, and consensus depth
   - shifts the recommended side 2.5 points in its favor for the displayed ALT25 line
   - Matchup Score is a ranking score, not a probability
+
+
+## NFL homepage / navigation v8
+- Removed Featured Hot Picks from the NFL homepage.
+- Game Environment Board is now the first main analysis section on the NFL homepage.
+- WR Top 5 moved off the homepage into its own NFL tab.
+- Added "Best Play Each Game" NFL tab:
+  - shows one play for every matchup on the current weekly board
+  - compares each game's ALT25 total score against its available spread score
+  - because the totals model is older/deeper, a spread needs a small score advantage to replace the total as the selected play
+  - if spread data is unavailable, the total is used
+  - displayed Model Score is a ranking score, not a calibrated win probability
+- Top 5 Hot Picks remains available as a tab, just not as a homepage feature.
+
+
+## Weekly pick maturity v9
+The "Best Play Each Game" tab now changes maturity labels automatically in Eastern Time:
+- Monday-Wednesday: EARLY LEAN
+- Thursday-Friday: MODEL PICK
+- Saturday-Sunday: FINAL PICK
+
+The displayed Model Score is deliberately reduced early in the week:
+- base early-week penalty: 8 points
+- Thursday-Friday penalty: 3 points
+- Saturday-Sunday: no maturity penalty
+- additional penalty when sportsbook consensus is thin
+- additional penalty when model notes still flag weather or injuries as developing
+
+This changes presentation/ranking confidence only and adds no new Odds API calls.

@@ -150,10 +150,11 @@ export async function GET(){
     return{...g,hotRank:hotIds.get(k)||null,isHot:hotIds.has(k)}
   });
 
-  const spreadPicks=spreadCandidates
+  const spreadBoard=spreadCandidates
     .sort((a,b)=>(b.matchupScore||0)-(a.matchupScore||0)||(b.edge||0)-(a.edge||0))
-    .slice(0,5)
     .map((g,i)=>({...g,rank:i+1}));
+
+  const spreadPicks=spreadBoard.slice(0,5);
 
   const nextKickoff=Math.min(...games.map(g=>new Date(g.kickoff).getTime()));
   const hoursToKickoff=(nextKickoff-Date.now())/3600000;
@@ -170,6 +171,7 @@ export async function GET(){
     modelVersion:"always-on-v1",
     altRule:2.5,
     games:decorated,
+    spreadBoard,
     spreadPicks,
     spreadFetchedAt:spreadBundle.fetchedAt,
     spreadCacheHours:12,
