@@ -62,7 +62,7 @@ function NflCard({g}){
 
     <div className="pickHero">
       <div><span className="pickEyebrow">ALT25 PLAY</span><div className={`mainPick ${g.side?.toLowerCase()}`}>{g.side} {one(g.altLine)}</div></div>
-      <div className="confidenceBox"><span>Confidence</span><strong>{adjustedConfidence}</strong></div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
     </div>
 
     <div className="numbersRow">
@@ -169,7 +169,7 @@ function GamePlayCard({pick}){
             : `${g.side} ${one(g.altLine)}`}
         </div>
       </div>
-      <div className="confidenceBox"><span>Confidence</span><strong>{g.confidence}</strong></div>
+      <div className="confidenceBox"><span>Confidence</span><strong>{adjustedConfidence}</strong></div>
     </div>
 
     <div className="numbersRow">

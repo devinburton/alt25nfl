@@ -125,3 +125,10 @@ The displayed Model Score is deliberately reduced early in the week:
 - additional penalty when model notes still flag weather or injuries as developing
 
 This changes presentation/ranking confidence only and adds no new Odds API calls.
+
+
+## v9 hotfix
+Fixed a client-side render error introduced by the maturity update.
+The normal NFL game card accidentally referenced `adjustedConfidence`, which only exists inside
+the "Best Play Each Game" card. Normal NFL cards now use `g.confidence`, while weekly best-play
+cards use the maturity-adjusted confidence as intended.
