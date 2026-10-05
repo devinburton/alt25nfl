@@ -132,3 +132,12 @@ Fixed a client-side render error introduced by the maturity update.
 The normal NFL game card accidentally referenced `adjustedConfidence`, which only exists inside
 the "Best Play Each Game" card. Normal NFL cards now use `g.confidence`, while weekly best-play
 cards use the maturity-adjusted confidence as intended.
+
+
+## Full-game Best Play + Probability Gap v10
+- Best Play Each Game now compares Total, Spread, Moneyline, and eligible conservative WR receiving-yard ALT targets.
+- Moneylines are fetched together with spreads on the existing 12-hour cache.
+- Probability Gap compares ALT25 estimated win probability with no-vig market implied probability.
+- New Probability Gap tab shows up to five positive moneyline gaps.
+- Player-prop ALT targets reuse free WR matchup data and do not request paid prop markets; availability must be checked at the sportsbook.
+- Model probabilities are estimates, not guarantees.
