@@ -450,9 +450,23 @@ export default function Home(){
       {error&&<div className="stateBox errorBox">{error}</div>}
       {!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&!["SPREAD","WR","GAME"].includes(nflFilter)&&<section className="boardSection">
+      {nfl&&nfl.boardMode!=="WAITING"&&!["SPREAD","WR","GAME","GAP"].includes(nflFilter)&&<section className="boardSection">
         <div className="boardHeading"><div><span className="sectionEyebrow">NFL</span><h2>{nflFilter==="ALL"?"Full Board":nflFilter==="HOT"?"Top 5 Hot Picks":`${nflFilter} Picks`}</h2></div><span>{nflGames.length} games</span></div>
         <div className="gameGrid">{nflGames.map((g,i)=><NflCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+      </section>}
+
+      {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="GAP"&&<section className="boardSection gapSection">
+        <div className="boardHeading">
+          <div>
+            <span className="sectionEyebrow">NFL VALUE MODEL</span>
+            <h2>⚡ Probability Gap</h2>
+            <p className="wrIntro">Moneylines ranked by the gap between the market's no-vig implied probability and ALT25's estimated win probability.</p>
+          </div>
+          <span>{nfl.probabilityGapPicks?.length||0} plays</span>
+        </div>
+        {(!nfl.probabilityGapPicks||nfl.probabilityGapPicks.length===0)&&<div className="stateBox">No positive moneyline probability gaps are available yet.</div>}
+        <div className="gameGrid">{(nfl.probabilityGapPicks||[]).map((g,i)=><MoneylineCard g={g} gapMode={true} key={`${g.away}-${g.home}-${i}`}/>)}</div>
+        <div className="wrNote">Probability Gap = ALT25 estimated win probability minus the market's no-vig implied probability. Estimated probability is model output, not a guarantee. Moneylines share the 12-hour spreads cache.</div>
       </section>}
 
       {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="SPREAD"&&<section className="boardSection">
