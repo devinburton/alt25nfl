@@ -6,6 +6,7 @@ import{getGameWeather}from"../../../lib/weather";
 import{buildTeamProfile,injuryAdjustment}from"../../../lib/analytics";
 import{analyzeGame}from"../../../lib/model";
 import{analyzeSpreadGame}from"../../../lib/spreadModel";
+import{analyzeMoneylineGame}from"../../../lib/moneylineModel";
 import{getLateSeasonContext,contextAdjustment}from"../../../lib/seasonContext";
 
 export const dynamic="force-dynamic";
@@ -82,6 +83,7 @@ export async function GET(){
   const seasonGames=await getSeasonScoreboard(current.year,current.seasonType);
 
   const spreadCandidates=[];
+  const moneylineCandidates=[];
   const rows=await Promise.all(slateOdds.map(async o=>{
     const s={
       id:o.espnId,
@@ -126,6 +128,19 @@ export async function GET(){
         homeInjury
       });
       if(spreadPick)spreadCandidates.push(spreadPick);
+
+      const mlPick=analyzeMoneylineGame({
+        ...s,
+        homeMl:spread.homeMl,
+        awayMl:spread.awayMl,
+        booksCount:spread.booksCount,
+        projectedMargin:spreadPick?.projectedMargin,
+        awayProfile,
+        homeProfile,
+        awayInjury,
+        homeInjury
+      });
+      if(mlPick)moneylineCandidates.push(mlPick);
     }
 
     return analyzeGame({
@@ -156,6 +171,14 @@ export async function GET(){
 
   const spreadPicks=spreadBoard.slice(0,5);
 
+  const moneylineBoard=moneylineCandidates
+    .sort((a,b)=>(b.probabilityGap||0)-(a.probabilityGap||0)||(b.matchupScore||0)-(a.matchupScore||0))
+    .map((g,i)=>({...g,rank:i+1}));
+
+  const probabilityGapPicks=moneylineBoard
+    .filter(g=>g.probabilityGap>0)
+    .slice(0,5);
+
   const nextKickoff=Math.min(...games.map(g=>new Date(g.kickoff).getTime()));
   const hoursToKickoff=(nextKickoff-Date.now())/3600000;
   const boardMode=hoursToKickoff>48?"EARLY":"ACTIVE";
@@ -173,6 +196,8 @@ export async function GET(){
     games:decorated,
     spreadBoard,
     spreadPicks,
+    moneylineBoard,
+    probabilityGapPicks,
     spreadFetchedAt:spreadBundle.fetchedAt,
     spreadCacheHours:12,
     upcomingSchedule:[],
