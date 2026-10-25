@@ -2,6 +2,7 @@
 
 import{useEffect,useMemo,useState}from"react";
 import NbaDogTotal from "./components/NbaDogTotal";
+import NbaSpreads from "./components/NbaSpreads";
 
 const SPORTS=[
   ["NFL","NFL"],
@@ -442,7 +443,7 @@ export default function Home(){
         <span className="brandMark">25</span>
         <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":`${sport} TOP 3`}</div>
+      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
@@ -454,7 +455,7 @@ export default function Home(){
       <div className="heroPanel">
         <span>Selected Sport</span>
         <strong>{sport}</strong>
-        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?"Top 3 totals":activeBoard?.status||"Loading")}</div>
+        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?"Top 3 totals":activeBoard?.status||"Loading")}</div>
       </div>
     </section>
 
@@ -586,9 +587,11 @@ export default function Home(){
 
     {sport==="NBA"&&<nav className="tabBar" aria-label="NBA views">
       <button type="button" className={nbaTab==="DOG"?"active":""} aria-pressed={nbaTab==="DOG"} onClick={()=>setNbaTab("DOG")}>Dog + Total</button>
+      <button type="button" className={nbaTab==="SPREADS"?"active":""} aria-pressed={nbaTab==="SPREADS"} onClick={()=>setNbaTab("SPREADS")}>Best Spreads</button>
       <button type="button" className={nbaTab==="TOTALS"?"active":""} aria-pressed={nbaTab==="TOTALS"} onClick={()=>setNbaTab("TOTALS")}>Top Totals</button>
     </nav>}
     {sport==="NBA"&&nbaTab==="DOG"&&<NbaDogTotal/>}
+    {sport==="NBA"&&nbaTab==="SPREADS"&&<NbaSpreads/>}
 
     {sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
       {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}
