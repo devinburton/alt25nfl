@@ -85,10 +85,10 @@ export async function GET(req,{params}){
       },config);
     }));
 
-    const top3=[...analyzed]
+    const ranked=[...analyzed]
       .sort((a,b)=>(b.hotScore||0)-(a.hotScore||0)||Math.abs(b.edge||0)-Math.abs(a.edge||0))
-      .slice(0,3)
       .map((g,i)=>({...g,rank:i+1}));
+    const visibleGames=id==="NBA"?ranked:ranked.slice(0,3);
 
     return NextResponse.json({
       sport:id,
@@ -98,7 +98,7 @@ export async function GET(req,{params}){
       cacheHours:config.cacheHours,
       slateGames:slate.length,
       modelVersion:"smart-v2",
-      games:top3
+      games:visibleGames
     });
   }catch(e){
     return NextResponse.json({error:e.message||"Unable to build sport board"},{status:500});
