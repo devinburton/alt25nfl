@@ -454,7 +454,7 @@ export default function Home(){
       <div className="heroPanel">
         <span>Selected Sport</span>
         <strong>{sport}</strong>
-        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(activeBoard?.status==="ACTIVE"?"Top 3 totals":activeBoard?.status||"Loading")}</div>
+        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?"Top 3 totals":activeBoard?.status||"Loading")}</div>
       </div>
     </section>
 

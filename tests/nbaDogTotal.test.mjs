@@ -46,3 +46,7 @@ test('injury screening matches player names when ESPN omits athlete IDs',async()
  globalThis.fetch=async url=>({ok:true,json:async()=>String(url).endsWith('/injuries')?{timestamp:new Date().toISOString(),injuries:[{displayName:'Away Dog',injuries:[{athlete:{displayName:'Test Scorer'},status:'Questionable'}]}]}:{events:[{id:'123',competitions:[{competitors:[{team:{displayName:'Away Dog'},leaders:[{name:'pointsPerGame',leaders:[{athlete:{displayName:'Test Scorer'}}]}]},{team:{displayName:'Home Favorite'},leaders:[{name:'pointsPerGame',leaders:[{athlete:{displayName:'Home Scorer'}}]}]}]}]}]}});
  try{const report=(await getNbaResearch([game])).get('test');assert.equal(report.available,true);assert.equal(report.unresolvedLeader,true);assert.equal(report.injuries[0].player,'Test Scorer');}finally{globalThis.fetch=original;}
 });
+test('matches ESPN LA Clippers to sportsbook Los Angeles Clippers',()=>{
+ const rows=[{id:'clippers',completed:true,seasonType:2,kickoff:'2026-11-19T00:00Z',home:'LA Clippers',away:'Other',homeScore:120,awayScore:110}];
+ assert.equal(teamResults('Los Angeles Clippers',rows,kickoff).length,1);
+});
