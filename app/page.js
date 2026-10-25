@@ -1,11 +1,12 @@
 "use client";
 
 import{useEffect,useMemo,useState}from"react";
+import NbaDogTotal from "./components/NbaDogTotal";
 
 const SPORTS=[
   ["NFL","NFL"],
   ["NCAA","NCAA Totals"],
-  ["NBA","NBA Totals"],
+  ["NBA","NBA"],
   ["WNBA","WNBA Totals"],
   ["MLB","Baseball Totals"]
 ];
@@ -311,6 +312,7 @@ export default function Home(){
   const[error,setError]=useState("");
   const[sport,setSport]=useState("NFL");
   const[nflFilter,setNflFilter]=useState("ALL");
+  const[nbaTab,setNbaTab]=useState("DOG");
   const[sportBoards,setSportBoards]=useState({});
   const[loadingSport,setLoadingSport]=useState("");
   const[wrBoard,setWrBoard]=useState(null);
@@ -440,14 +442,14 @@ export default function Home(){
         <span className="brandMark">25</span>
         <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):`${sport} TOP 3`}</div>
+      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
       <div>
         <div className="kicker">TOTALS ACROSS THE BOARD</div>
         <h1>Find the edge.<br/><span>Take the 2.5.</span></h1>
-        <p>ALT25 analyzes totals across football, basketball and baseball. NFL gets the full board; other sports surface only the three strongest model-rated totals from the next slate using recent form, defense, location, rest and sport-specific context.</p>
+        <p>ALT25 analyzes totals across football, basketball and baseball. NFL gets the full board; NBA adds Dog + Total matchup research alongside its top totals. Other sports surface the strongest model-rated totals using recent form, defense, location, rest and sport-specific context.</p>
       </div>
       <div className="heroPanel">
         <span>Selected Sport</span>
@@ -582,7 +584,13 @@ export default function Home(){
       </section>}
     </>}
 
-    {sport!=="NFL"&&<section className="otherSportSection">
+    {sport==="NBA"&&<nav className="tabBar" aria-label="NBA views">
+      <button type="button" className={nbaTab==="DOG"?"active":""} aria-pressed={nbaTab==="DOG"} onClick={()=>setNbaTab("DOG")}>Dog + Total</button>
+      <button type="button" className={nbaTab==="TOTALS"?"active":""} aria-pressed={nbaTab==="TOTALS"} onClick={()=>setNbaTab("TOTALS")}>Top Totals</button>
+    </nav>}
+    {sport==="NBA"&&nbaTab==="DOG"&&<NbaDogTotal/>}
+
+    {sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
       {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}
 
       {sportBoards[sport]&&sportBoards[sport].status==="OFFSEASON"&&<div className="seasonState">
