@@ -171,7 +171,7 @@ export default function Home(){
   const[error,setError]=useState("");
   const[sport,setSport]=useState("NFL");
   const[nflFilter,setNflFilter]=useState("ALL");
-  const[nbaTab,setNbaTab]=useState("DOG");
+  const[nbaTab,setNbaTab]=useState("TOTALS");
   const[sportBoards,setSportBoards]=useState({});
   const[loadingSport,setLoadingSport]=useState("");
   const[wrBoard,setWrBoard]=useState(null);
@@ -261,7 +261,7 @@ export default function Home(){
     </section>
 
     <nav className="sportTabs" aria-label="Sports">
-      {SPORTS.map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>setSport(id)}>{label}</button>)}
+      {SPORTS.map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
     </nav>
 
     {sport==="NFL"&&<>
@@ -361,10 +361,10 @@ export default function Home(){
     </>}
 
     {sport==="NBA"&&<nav className="tabBar" aria-label="NBA views">
+      <button type="button" className={nbaTab==="TOTALS"?"active":""} aria-pressed={nbaTab==="TOTALS"} onClick={()=>setNbaTab("TOTALS")}>All Totals</button>
       <button type="button" className={nbaTab==="DOG"?"active":""} aria-pressed={nbaTab==="DOG"} onClick={()=>setNbaTab("DOG")}>Dog + Total</button>
       <button type="button" className={nbaTab==="SPREADS"?"active":""} aria-pressed={nbaTab==="SPREADS"} onClick={()=>setNbaTab("SPREADS")}>Best Spreads</button>
       <button type="button" className={nbaTab==="POINTS"?"active":""} aria-pressed={nbaTab==="POINTS"} onClick={()=>setNbaTab("POINTS")}>Player Points</button>
-      <button type="button" className={nbaTab==="TOTALS"?"active":""} aria-pressed={nbaTab==="TOTALS"} onClick={()=>setNbaTab("TOTALS")}>All Totals</button>
     </nav>}
     {sport==="NBA"&&nbaTab==="DOG"&&<NbaDogTotal/>}
     {sport==="NBA"&&nbaTab==="SPREADS"&&<NbaSpreads/>}
