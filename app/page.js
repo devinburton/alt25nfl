@@ -5,6 +5,7 @@ import NbaDogTotal from "./components/NbaDogTotal";
 import NbaSpreads from "./components/NbaSpreads";
 import NbaPlayerPoints from "./components/NbaPlayerPoints";
 import NbaMatchWinners from "./components/NbaMatchWinners";
+import TopSingles from "./components/TopSingles";
 import NflPlayerResearch from "./components/NflPlayerResearch";
 
 const SPORTS=[
@@ -192,7 +193,7 @@ export default function Home(){
   },[]);
 
   useEffect(()=>{
-    if(sport==="NFL"||sportBoards[sport])return;
+    if(sport==="SINGLES"||sport==="NFL"||sportBoards[sport])return;
     setLoadingSport(sport);
     fetch(`/api/sport/${sport}`,{cache:"no-store"})
       .then(async r=>{
@@ -245,7 +246,7 @@ export default function Home(){
         <span className="brandMark">25</span>
         <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/>{sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
+      <div className="liveChip"><span className="liveDot"/>{sport==="SINGLES"?"TOP 10 SINGLES":sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
@@ -256,14 +257,16 @@ export default function Home(){
       </div>
       <div className="heroPanel">
         <span>Selected Sport</span>
-        <strong>{sport}</strong>
-        <div>{sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="WINNERS"?"Match Winners research":sport==="NBA"&&nbaTab==="POINTS"?"Player Points research":sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?(sport==="NBA"?"All totals":"Top 3 totals"):activeBoard?.status||"Loading")}</div>
+        <strong>{sport==="SINGLES"?"ALL SPORTS":sport}</strong>
+        <div>{sport==="SINGLES"?"All-sports probability research":sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="WINNERS"?"Match Winners research":sport==="NBA"&&nbaTab==="POINTS"?"Player Points research":sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?(sport==="NBA"?"All totals":"Top 3 totals"):activeBoard?.status||"Loading")}</div>
       </div>
     </section>
 
     <nav className="sportTabs" aria-label="Sports">
-      {SPORTS.map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
+      {[["SINGLES","Top 10 Singles"],...SPORTS].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
     </nav>
+
+    {sport==="SINGLES"&&<TopSingles/>}
 
     {sport==="NFL"&&<>
       {nfl&&<section className="statusStrip">
@@ -373,7 +376,7 @@ export default function Home(){
     {sport==="NBA"&&nbaTab==="SPREADS"&&<NbaSpreads/>}
     {sport==="NBA"&&nbaTab==="POINTS"&&<NbaPlayerPoints/>}
 
-    {sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
+    {sport!=="SINGLES"&&sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
       {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}
 
       {sportBoards[sport]&&sportBoards[sport].status==="OFFSEASON"&&<div className="seasonState">
