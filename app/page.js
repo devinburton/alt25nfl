@@ -263,7 +263,7 @@ export default function Home(){
     </section>
 
     <nav className="sportTabs" aria-label="Sports">
-      {[["SINGLES","Top 10 Singles"],...SPORTS].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
+      {[...SPORTS,["SINGLES","Top 10 Singles"]].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
     </nav>
 
     {sport==="SINGLES"&&<TopSingles/>}
