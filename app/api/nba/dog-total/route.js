@@ -19,6 +19,6 @@ export async function GET(){
       const analyzed=analyzeSportGame({...g,awayProfile:recentProfile(g.away,history,g.kickoff,10),homeProfile:recentProfile(g.home,history,g.kickoff,10)}, {...SPORT_CONFIG.NBA,recentGames:10});
       return analyzeDogTotal(analyzed,history,research.get(g.id),{oddsFetchedAt:bundle.fetchedAt});
     }).sort((a,b)=>(b.researchScore||0)-(a.researchScore||0));
-    return NextResponse.json({status:"ACTIVE",modelVersion:MODEL_VERSION,fetchedAt:bundle.fetchedAt,researchAt:new Date().toISOString(),cacheHours:6,games,candidates:games.filter(g=>g.status==="RESEARCH").length,methodology:"Market-anchored scoring and margin projections; correlated joint simulation with conservative variance floors. Minimum four regular-season games per team. Targets have no verified sportsbook quote. No value recommendation without a combined SGP price. No out-of-sample validation yet."});
+    return NextResponse.json({status:"ACTIVE",modelVersion:MODEL_VERSION,fetchedAt:bundle.fetchedAt,researchAt:new Date().toISOString(),cacheHours:12,games,candidates:games.filter(g=>g.status==="RESEARCH").length,methodology:"Market-anchored scoring and margin projections; correlated joint simulation with conservative variance floors. Minimum four regular-season games per team. Targets have no verified sportsbook quote. No value recommendation without a combined SGP price. No out-of-sample validation yet."});
   }catch{return NextResponse.json({status:"ERROR",message:"Unable to build NBA research right now. Try again shortly.",games:[]},{status:502});}
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import{useEffect,useMemo,useState}from"react";
+import OddsCreditStatus from "./components/OddsCreditStatus";
 import NbaDogTotal from "./components/NbaDogTotal";
 import NbaSpreads from "./components/NbaSpreads";
 import NbaPlayerPoints from "./components/NbaPlayerPoints";
@@ -262,6 +263,7 @@ export default function Home(){
       </div>
     </section>
 
+    <OddsCreditStatus/>
     <nav className="sportTabs" aria-label="Sports">
       {[...SPORTS,["SINGLES","Top 10 Singles"]].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
     </nav>
@@ -271,7 +273,7 @@ export default function Home(){
     {sport==="NFL"&&<>
       {nfl&&<section className="statusStrip">
         <div><span>Games</span><strong>{nfl.games?.length||0}</strong></div>
-        <div><span>Odds refresh</span><strong>{nfl.oddsCacheHours||2}h</strong></div>
+        <div><span>Odds refresh</span><strong>{nfl.oddsCacheHours||12}h</strong></div>
         <div><span>Last odds pull</span><strong>{fmtUpdated(nfl.oddsFetchedAt)}</strong></div>
         <div><span>Week</span><strong>{nfl.week||"—"}</strong></div>
       </section>}

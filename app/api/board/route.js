@@ -36,7 +36,7 @@ export async function GET(){
     return NextResponse.json({
       updatedAt:new Date().toISOString(),
       oddsFetchedAt:oddsBundle.fetchedAt,
-      oddsCacheHours:2,
+      oddsCacheHours:12,
       year:current.year,
       week:firstWeek,
       oddsMode:"WAITING FOR LINES",
@@ -186,7 +186,7 @@ export async function GET(){
   return NextResponse.json({
     updatedAt:new Date().toISOString(),
     oddsFetchedAt:oddsBundle.fetchedAt,
-    oddsCacheHours:2,
+    oddsCacheHours:12,
     year:current.year,
     week:targetWeek,
     oddsMode:boardMode==="EARLY"?"EARLY CONSENSUS":"LIVE CONSENSUS",
@@ -199,7 +199,7 @@ export async function GET(){
     moneylineBoard,
     probabilityGapPicks,
     spreadFetchedAt:spreadBundle.fetchedAt,
-    spreadCacheHours:12,
+    spreadCacheHours:24,
     upcomingSchedule:[],
   })
  }catch(e){

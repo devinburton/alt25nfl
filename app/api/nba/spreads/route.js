@@ -16,6 +16,6 @@ export async function GET(){
     const regular=history.filter(g=>g.seasonType===2);
     const analyzed=slate.map(g=>analyzeNbaSpread({...g,awayProfile:recentProfile(g.away,regular,g.kickoff,10),homeProfile:recentProfile(g.home,regular,g.kickoff,10)},regular,research.get(g.id),{oddsFetchedAt:odds.fetchedAt}));
     const candidates=analyzed.filter(g=>g.status==="CANDIDATE").sort((a,b)=>b.expectedReturn-a.expectedReturn||b.score-a.score);
-    return NextResponse.json({status:"ACTIVE",modelVersion:"nba-spreads-v1-beta",fetchedAt:odds.fetchedAt,researchAt:new Date().toISOString(),cacheHours:6,slateGames:slate.length,candidateCount:candidates.length,games:candidates.slice(0,5).map((g,i)=>({...g,rank:i+1})),passes:analyzed.filter(g=>g.status==="PASS")});
+    return NextResponse.json({status:"ACTIVE",modelVersion:"nba-spreads-v1-beta",fetchedAt:odds.fetchedAt,researchAt:new Date().toISOString(),cacheHours:12,slateGames:slate.length,candidateCount:candidates.length,games:candidates.slice(0,5).map((g,i)=>({...g,rank:i+1})),passes:analyzed.filter(g=>g.status==="PASS")});
   }catch{return NextResponse.json({message:"NBA spread research could not load. Please try again shortly."},{status:502});}
 }
