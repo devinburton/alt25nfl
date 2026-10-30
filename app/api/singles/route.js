@@ -1,3 +1,5 @@
+import { getOddsBudget } from '../../../lib/oddsBudget';
+import { budgetDecision } from '../../../lib/oddsBudgetPolicy';
 import { NextResponse } from 'next/server';
 import { SPORT_CONFIG, fetchSportOdds, isSportActive } from '../../../lib/multiSportOdds';
 import { fetchLiveNflTotals } from '../../../lib/liveOdds';
@@ -23,6 +25,6 @@ async function scan(config) {
   } catch { return {sport:config.id,status:'ERROR',message:'This sport’s research feed is unavailable. No picks were inferred.',games:0,passes:[],candidates:[]}; }
 }
 export async function GET() {
-  const scans = await Promise.all(configs.map(scan));
-  return NextResponse.json({updatedAt:new Date().toISOString(),modelVersion:'singles-v1-beta',rules:SINGLES_RULES,games:selectTopSingles(scans.flatMap(s=>s.candidates)),coverage:scans.map(({candidates,...s})=>s)}, {headers:{'Cache-Control':'no-store'}});
+  const [scans,quota] = await Promise.all([Promise.all(configs.map(scan)),getOddsBudget()]);
+  return NextResponse.json({updatedAt:new Date().toISOString(),modelVersion:'singles-v2-beta',creditStatus:{mainPaused:!budgetDecision(quota).allowed,remaining:quota?.remaining??null},rules:SINGLES_RULES,games:selectTopSingles(scans.flatMap(s=>s.candidates)),coverage:scans.map(({candidates,...s})=>s)}, {headers:{'Cache-Control':'no-store'}});
 }

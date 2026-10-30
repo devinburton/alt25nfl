@@ -44,3 +44,12 @@ test('top ten sorts across sports by win chance, deduplicates games, rejects sta
   assert.equal(selected.length,10);assert.equal(selected[0].probability,.95);assert.equal(new Set(selected.map(x=>x.sport+':'+x.id)).size,10);assert.equal(selected[0].rank,1);
   assert.equal(selectTopSingles([],now).length,0);
 });
+
+test('standard-total candidates between 55% and 65% can qualify without inflating the estimate',()=>{
+ const standard={...game,totalQuotes:quotes.map(q=>({...q,line:44.5}))};
+ const result=analyzeSingleTotal(standard,config,history,options);
+ assert.equal(result.candidates.length,1);
+ const p=result.candidates[0];assert.ok(p.probability>=.55&&p.probability<.65);assert.ok(p.edge>=.03&&p.expectedReturn>=.02);
+ assert.equal(selectTopSingles([p],now).length,1);
+ assert.equal(selectTopSingles([{...p,probability:.54}],now).length,0);
+});
