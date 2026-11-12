@@ -263,7 +263,6 @@ export default function Home(){
       </div>
     </section>
 
-    <OddsCreditStatus/>
     <nav className="sportTabs" aria-label="Sports">
       {[...SPORTS,["SINGLES","Top 10 Singles"]].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
     </nav>
@@ -402,7 +401,10 @@ export default function Home(){
 
     <footer className="footerRevamp">
       <div><strong>ALT25</strong><span>Sports Totals Intelligence</span></div>
-      <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. All sports now include late-season context when standings or record data support it. NCAA uses a conservative record-based version; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
+      <div>
+        <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. All sports now include late-season context when standings or record data support it. NCAA uses a conservative record-based version; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
+        <OddsCreditStatus/>
+      </div>
     </footer>
   </main>;
 }
