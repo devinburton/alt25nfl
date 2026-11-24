@@ -4,6 +4,7 @@ import{getRecentResultsWindow,recentProfile}from"../../../../lib/espnSports";
 import{getMlbGameContext}from"../../../../lib/mlbFreeData";
 import{getLateSeasonContext,contextAdjustment}from"../../../../lib/seasonContext";
 import{analyzeSportGame}from"../../../../lib/sportModel";
+import{consensusWinner}from"../../../../lib/moneylineModel";
 
 function easternDate(iso){
   const parts=new Intl.DateTimeFormat("en-CA",{year:"numeric",month:"2-digit",day:"2-digit",timeZone:"America/New_York"}).formatToParts(new Date(iso));
@@ -35,6 +36,7 @@ export async function GET(req,{params}){
     const id=String(resolvedParams?.sport||"").toUpperCase();
     const config=SPORT_CONFIG[id];
     if(!config)return NextResponse.json({error:"Unknown sport"},{status:404});
+    const womenCollege=id==="WNCAAB";
 
     const active=await isSportActive(config.key);
     if(!active){
@@ -49,27 +51,30 @@ export async function GET(req,{params}){
     }
 
     const oddsBundle=await fetchSportOdds(id);
-    const slate=chooseSlate(oddsBundle.games,config.slateMode);
+    const now=Date.now();
+    const upcoming=womenCollege?oddsBundle.games.filter(g=>Date.parse(g.kickoff)>now):oddsBundle.games;
+    const slate=chooseSlate(upcoming,config.slateMode);
 
     if(!slate.length){
       return NextResponse.json({
         sport:id,
         title:config.title,
         status:"WAITING",
-        message:"No totals are posted for the next slate yet.",
+        message:womenCollege?"No lines are posted for the next slate yet.":"No totals are posted for the next slate yet.",
         fetchedAt:oddsBundle.fetchedAt,
         cacheHours:config.cacheHours,
         games:[]
       });
     }
 
-    const historyDays=id==="MLB"?28:id==="NBA"||id==="WNBA"?35:70;
-    const history=await getRecentResultsWindow(config.espnPath,slate[0].kickoff,historyDays);
+    const totalsSlate=womenCollege?slate.filter(g=>Number.isFinite(g.total)):slate;
+    const historyDays=id==="MLB"?28:id==="NBA"||id==="WNBA"||womenCollege?35:70;
+    const history=totalsSlate.length?await getRecentResultsWindow(config.espnPath,slate[0].kickoff,historyDays,config.espnGroup):[];
     const mlbMap=id==="MLB"?await getMlbGameContext(slate):new Map();
     const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
 
-    const analyzed=await Promise.all(slate.map(async g=>{
-      const seasonContext=await getLateSeasonContext({
+    const analyzed=await Promise.all(totalsSlate.map(async g=>{
+      const seasonContext=womenCollege?null:await getLateSeasonContext({
         sportId:id,
         espnPath:config.espnPath,
         game:g
@@ -85,10 +90,12 @@ export async function GET(req,{params}){
       },config);
     }));
 
-    const ranked=[...analyzed]
+    const ranked=analyzed
+      .filter(g=>!womenCollege||(g.awayProfile?.games>=2&&g.homeProfile?.games>=2&&g.edge!==0))
       .sort((a,b)=>(b.hotScore||0)-(a.hotScore||0)||Math.abs(b.edge||0)-Math.abs(a.edge||0))
       .map((g,i)=>({...g,rank:i+1}));
-    const visibleGames=id==="NBA"?ranked:ranked.slice(0,3);
+    const visibleGames=id==="NBA"?ranked:ranked.slice(0,womenCollege?5:3);
+    const winners=womenCollege?slate.map(consensusWinner).filter(Boolean).sort((a,b)=>b.winProbability-a.winProbability):null;
 
     return NextResponse.json({
       sport:id,
@@ -98,7 +105,8 @@ export async function GET(req,{params}){
       cacheHours:config.cacheHours,
       slateGames:slate.length,
       modelVersion:"smart-v2",
-      games:visibleGames
+      games:visibleGames,
+      ...(womenCollege?{winners}:{})
     });
   }catch(e){
     return NextResponse.json({error:e.message||"Unable to build sport board"},{status:500});

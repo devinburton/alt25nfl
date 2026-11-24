@@ -6,7 +6,6 @@ import NbaDogTotal from "./components/NbaDogTotal";
 import NbaSpreads from "./components/NbaSpreads";
 import NbaPlayerPoints from "./components/NbaPlayerPoints";
 import NbaMatchWinners from "./components/NbaMatchWinners";
-import TopSingles from "./components/TopSingles";
 import NflPlayerResearch from "./components/NflPlayerResearch";
 
 const SPORTS=[
@@ -14,8 +13,11 @@ const SPORTS=[
   ["NCAA","NCAA Totals"],
   ["NBA","NBA"],
   ["WNBA","WNBA Totals"],
-  ["MLB","Baseball Totals"]
+  ["MLB","Baseball Totals"],
+  ["WNCAAB","NCAA Women’s Basketball"]
 ];
+
+const WOMEN_TABS=[["TOTALS","Top 5 Hot Totals"],["WINNERS","Outright Winners"]];
 
 const NFL_FILTERS=[
   ["ALL","All Games"],
@@ -169,12 +171,31 @@ function SportCard({g,sport}){
   </article>
 }
 
+function CollegeWinnerCard({game}){
+  return <article className="gameCard">
+    <div className="cardHead">
+      <div className="cardHeadMain">
+        <div className="kickoff">{fmt(game.kickoff)}</div>
+        <h3>{game.away} <span>@</span> {game.home}</h3>
+      </div>
+    </div>
+    <div className="dogLegs">
+      <div>
+        <span>OUTRIGHT WINNER</span>
+        <strong>{game.winner||"Even matchup"}</strong>
+        <small>{one(game.winProbability)}% market estimate · {game.booksCount} {game.booksCount===1?"book":"books"}</small>
+      </div>
+    </div>
+  </article>
+}
+
 export default function Home(){
   const[nfl,setNfl]=useState(null);
   const[error,setError]=useState("");
   const[sport,setSport]=useState("NFL");
   const[nflFilter,setNflFilter]=useState("ALL");
   const[nbaTab,setNbaTab]=useState("TOTALS");
+  const[womenTab,setWomenTab]=useState("TOTALS");
   const[sportBoards,setSportBoards]=useState({});
   const[loadingSport,setLoadingSport]=useState("");
   const[wrBoard,setWrBoard]=useState(null);
@@ -194,7 +215,7 @@ export default function Home(){
   },[]);
 
   useEffect(()=>{
-    if(sport==="SINGLES"||sport==="NFL"||sportBoards[sport])return;
+    if(sport==="NFL"||sport==="WNCAAB"||sportBoards[sport])return;
     setLoadingSport(sport);
     fetch(`/api/sport/${sport}`,{cache:"no-store"})
       .then(async r=>{
@@ -206,6 +227,26 @@ export default function Home(){
       .catch(e=>setSportBoards(prev=>({...prev,[sport]:{status:"ERROR",message:e.message,games:[]}})))
       .finally(()=>setLoadingSport(""));
   },[sport,sportBoards]);
+
+  useEffect(()=>{
+    if(sport!=="WNCAAB")return;
+    const controller=new AbortController();
+    async function refresh(){
+      try{
+        const response=await fetch("/api/sport/WNCAAB",{cache:"no-store",signal:controller.signal});
+        const board=await response.json();
+        if(!response.ok)throw new Error(board.error||"Could not load women’s basketball.");
+        setSportBoards(prev=>({...prev,WNCAAB:board}));
+      }catch(error){
+        if(error.name!=="AbortError"){
+          setSportBoards(prev=>({...prev,WNCAAB:{status:"ERROR",message:error.message}}));
+        }
+      }
+    }
+    refresh();
+    const timer=setInterval(refresh,5*60*1000);
+    return()=>{controller.abort();clearInterval(timer)};
+  },[sport]);
 
   const nflGames=useMemo(()=>{
     const list=nfl?.games||[];
@@ -240,6 +281,8 @@ export default function Home(){
   },[nfl]);
 
   const activeBoard=sport==="NFL"?nfl:sportBoards[sport];
+  const womenView=WOMEN_TABS.find(([id])=>id===womenTab)[1];
+  const womenGames=(womenTab==="TOTALS"?activeBoard?.games:activeBoard?.winners)||[];
 
   return <main className="siteShell">
     <header className="topBar">
@@ -247,7 +290,7 @@ export default function Home(){
         <span className="brandMark">25</span>
         <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/>{sport==="SINGLES"?"TOP 10 SINGLES":sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
+      <div className="liveChip"><span className="liveDot"/>{sport==="WNCAAB"?"WOMEN’S COLLEGE BASKETBALL":sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
@@ -258,16 +301,35 @@ export default function Home(){
       </div>
       <div className="heroPanel">
         <span>Selected Sport</span>
-        <strong>{sport==="SINGLES"?"ALL SPORTS":sport}</strong>
-        <div>{sport==="SINGLES"?"All-sports probability research":sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="WINNERS"?"Match Winners research":sport==="NBA"&&nbaTab==="POINTS"?"Player Points research":sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?(sport==="NBA"?"All totals":"Top 3 totals"):activeBoard?.status||"Loading")}</div>
+        <strong>{sport==="WNCAAB"?"NCAA Women’s Basketball":sport}</strong>
+        <div>{sport==="WNCAAB"?womenView:sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="WINNERS"?"Match Winners research":sport==="NBA"&&nbaTab==="POINTS"?"Player Points research":sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?(sport==="NBA"?"All totals":"Top 3 totals"):activeBoard?.status||"Loading")}</div>
       </div>
     </section>
 
     <nav className="sportTabs" aria-label="Sports">
-      {[...SPORTS,["SINGLES","Top 10 Singles"]].map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS")}}>{label}</button>)}
+      {SPORTS.map(([id,label])=><button key={id} type="button" className={sport===id?"active":""} onClick={()=>{setSport(id);if(id==="NBA")setNbaTab("TOTALS");if(id==="WNCAAB")setWomenTab("TOTALS")}}>{label}</button>)}
     </nav>
 
-    {sport==="SINGLES"&&<TopSingles/>}
+    {sport==="WNCAAB"&&<>
+      <nav className="tabBar" aria-label="NCAA women’s basketball views">
+        {WOMEN_TABS.map(([id,label])=><button key={id} type="button" className={womenTab===id?"active":""} aria-pressed={womenTab===id} onClick={()=>setWomenTab(id)}>{label}</button>)}
+      </nav>
+      <section className="otherSportSection">
+        {!activeBoard&&<div className="stateBox" role="status">Loading women’s basketball picks…</div>}
+        {activeBoard&&activeBoard.status!=="ACTIVE"&&<div className={`stateBox ${activeBoard.status==="ERROR"?"errorBox":""}`}>{activeBoard.message}</div>}
+        {activeBoard?.status==="ACTIVE"&&<>
+          <section className="sportStatus">
+            <div>
+              <h2>{womenView}</h2>
+              <p>{womenTab==="TOTALS"?"Over/under picks ranked by ALT25 Hot Score.":"One lean per posted moneyline matchup, ranked by estimated win probability."}</p>
+            </div>
+            <div className="sportMeta"><span>Odds updated <strong>{fmtUpdated(activeBoard.fetchedAt)}</strong></span></div>
+          </section>
+          {!womenGames.length&&<div className="stateBox">{womenTab==="TOTALS"?"No totals picks have enough recent game data yet.":"No moneylines are posted for this slate yet."}</div>}
+          <div className="gameGrid">{womenGames.map(g=>womenTab==="TOTALS"?<SportCard key={g.id} g={g} sport="WNCAAB"/>:<CollegeWinnerCard key={g.id} game={g}/>)}</div>
+        </>}
+      </section>
+    </>}
 
     {sport==="NFL"&&<>
       {nfl&&<section className="statusStrip">
@@ -377,7 +439,7 @@ export default function Home(){
     {sport==="NBA"&&nbaTab==="SPREADS"&&<NbaSpreads/>}
     {sport==="NBA"&&nbaTab==="POINTS"&&<NbaPlayerPoints/>}
 
-    {sport!=="SINGLES"&&sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
+    {sport!=="WNCAAB"&&sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
       {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}
 
       {sportBoards[sport]&&sportBoards[sport].status==="OFFSEASON"&&<div className="seasonState">
