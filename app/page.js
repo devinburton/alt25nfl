@@ -11,11 +11,11 @@ import TeamTotals from "./components/TeamTotals";
 
 const SPORTS=[
   ["NFL","NFL"],
-  ["NCAA","NCAA Totals"],
   ["NBA","NBA"],
+  ["NCAA","NCAA Totals"],
+  ["WNCAAB","NCAA Women’s Basketball"],
   ["WNBA","WNBA Totals"],
-  ["MLB","Baseball Totals"],
-  ["WNCAAB","NCAA Women’s Basketball"]
+  ["MLB","Baseball Totals"]
 ];
 
 const WOMEN_TABS=[["TOTALS","Top 5 Hot Totals"],["WINNERS","Outright Winners"]];
