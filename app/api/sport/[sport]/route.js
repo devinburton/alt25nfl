@@ -38,6 +38,7 @@ export async function GET(req,{params}){
     const config=SPORT_CONFIG[id];
     if(!config)return NextResponse.json({error:"Unknown sport"},{status:404});
     const womenCollege=id==="WNCAAB";
+    const collegeBasketball=id==="NCAAB"||womenCollege;
 
     const active=await isSportActive(config.key);
     if(!active){
@@ -53,7 +54,7 @@ export async function GET(req,{params}){
 
     const oddsBundle=await fetchSportOdds(id);
     const now=Date.now();
-    const upcoming=womenCollege?oddsBundle.games.filter(g=>Date.parse(g.kickoff)>now):oddsBundle.games;
+    const upcoming=collegeBasketball?oddsBundle.games.filter(g=>Date.parse(g.kickoff)>now):oddsBundle.games;
     const slate=chooseSlate(upcoming,config.slateMode);
 
     if(!slate.length){
@@ -69,13 +70,13 @@ export async function GET(req,{params}){
     }
 
     const totalsSlate=womenCollege?slate.filter(g=>Number.isFinite(g.total)):slate;
-    const historyDays=id==="MLB"?28:id==="NBA"||id==="WNBA"||womenCollege?35:70;
+    const historyDays=id==="MLB"?28:id==="NBA"||id==="WNBA"||collegeBasketball?35:70;
     const history=totalsSlate.length?await getRecentResultsWindow(config.espnPath,slate[0].kickoff,historyDays,config.espnGroup):[];
     const mlbMap=id==="MLB"?await getMlbGameContext(slate):new Map();
     const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
 
     const analyzed=await Promise.all(totalsSlate.map(async g=>{
-      const seasonContext=womenCollege?null:await getLateSeasonContext({
+      const seasonContext=collegeBasketball?null:await getLateSeasonContext({
         sportId:id,
         espnPath:config.espnPath,
         game:g
@@ -95,7 +96,7 @@ export async function GET(req,{params}){
     }));
 
     const ranked=analyzed
-      .filter(g=>!womenCollege||(g.awayProfile?.games>=2&&g.homeProfile?.games>=2&&g.edge!==0))
+      .filter(g=>!collegeBasketball||(g.awayProfile?.games>=2&&g.homeProfile?.games>=2&&g.edge!==0))
       .sort((a,b)=>(b.hotScore||0)-(a.hotScore||0)||Math.abs(b.edge||0)-Math.abs(a.edge||0))
       .map((g,i)=>({...g,rank:i+1}));
     const visibleGames=id==="NBA"?ranked:ranked.slice(0,womenCollege?5:3);

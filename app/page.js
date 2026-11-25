@@ -12,7 +12,7 @@ import TeamTotals from "./components/TeamTotals";
 const SPORTS=[
   ["NFL","NFL"],
   ["NBA","NBA"],
-  ["NCAA","NCAA Totals"],
+  ["NCAAB","NCAA Men's Basketball"],
   ["WNCAAB","NCAA Women’s Basketball"],
   ["WNBA","WNBA Totals"],
   ["MLB","Baseball Totals"]
@@ -283,6 +283,7 @@ export default function Home(){
   },[nfl]);
 
   const activeBoard=sport==="NFL"?nfl:sportBoards[sport];
+  const sportLabel=sport==="NCAAB"?"NCAA Men's Basketball":sport==="WNCAAB"?"NCAA Women’s Basketball":sport;
   const teamTotalsView=(sport==="NFL"&&nflFilter==="TEAM_TOTALS")||(sport==="NBA"&&nbaTab==="TEAM_TOTALS");
   const womenView=WOMEN_TABS.find(([id])=>id===womenTab)[1];
   const womenGames=(womenTab==="TOTALS"?activeBoard?.games:activeBoard?.winners)||[];
@@ -304,7 +305,7 @@ export default function Home(){
       </div>
       <div className="heroPanel">
         <span>Selected Sport</span>
-        <strong>{sport==="WNCAAB"?"NCAA Women’s Basketball":sport}</strong>
+        <strong>{sportLabel}</strong>
         <div>{sport==="WNCAAB"?womenView:sport==="NFL"?(nfl?.oddsMode||"Loading NFL"):(sport==="NBA"&&nbaTab==="WINNERS"?"Match Winners research":sport==="NBA"&&nbaTab==="POINTS"?"Player Points research":sport==="NBA"&&nbaTab==="SPREADS"?"Best Spreads research":sport==="NBA"&&nbaTab==="DOG"?"Dog + Total research":activeBoard?.status==="ACTIVE"?(sport==="NBA"?"All totals":"Top 3 totals"):activeBoard?.status||"Loading")}</div>
       </div>
     </section>
@@ -467,9 +468,10 @@ export default function Home(){
 
       {sportBoards[sport]&&sportBoards[sport].status==="ACTIVE"&&<>
         <section className="sportStatus">
-          <div><span className="sectionEyebrow">{sport}</span><h2>{sport==="NBA"?"All NBA Totals":`Top ${sportBoards[sport].games.length} Totals`}</h2><p>{sport==="NBA"?`ALT25 shows a model-rated total for all ${sportBoards[sport].slateGames} games with posted totals on the next slate.`:`ALT25 analyzed ${sportBoards[sport].slateGames} games in the next slate and surfaced only the strongest three model-rated totals.`} Model: {sportBoards[sport].modelVersion||"smart-v2"}.</p></div>
+          <div><span className="sectionEyebrow">{sportLabel}</span><h2>{sport==="NBA"?"All NBA Totals":sport==="NCAAB"?"Top 3 Totals":`Top ${sportBoards[sport].games.length} Totals`}</h2><p>{sport==="NBA"?`ALT25 shows a model-rated total for all ${sportBoards[sport].slateGames} games with posted totals on the next slate.`:`ALT25 analyzed ${sportBoards[sport].slateGames} games in the next slate and shows up to three model-rated totals.`} Model: {sportBoards[sport].modelVersion||"smart-v2"}.</p></div>
           <div className="sportMeta"><span>Odds cache <strong>{sportBoards[sport].cacheHours}h</strong></span><span>Updated <strong>{fmtUpdated(sportBoards[sport].fetchedAt)}</strong></span></div>
         </section>
+        {sport==="NCAAB"&&!sportBoards[sport].games.length&&<div className="stateBox">Waiting for enough recent team results to make a totals pick.</div>}
         <div className="gameGrid">{sportBoards[sport].games.map((g,i)=><SportCard g={g} sport={sport} key={`${g.away}-${g.home}-${i}`}/>)}</div>
       </>}
     </section>}
@@ -477,7 +479,7 @@ export default function Home(){
     <footer className="footerRevamp">
       <div><strong>ALT25</strong><span>Sports Totals Intelligence</span></div>
       <div>
-        <p>Hot Score is a ranking score, not a win probability. NFL uses the full ALT25 model. All sports now include late-season context when standings or record data support it. NCAA uses a conservative record-based version; MLB also uses probable-starting-pitcher ERA when available. Missing data is skipped rather than invented.</p>
+        <p>Hot Score ranks picks. NFL uses the full ALT25 model. Where available, the model uses late-season context and probable-starting-pitcher ERA for MLB.</p>
         <OddsCreditStatus/>
       </div>
     </footer>
