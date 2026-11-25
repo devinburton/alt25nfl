@@ -7,6 +7,7 @@ import NbaSpreads from "./components/NbaSpreads";
 import NbaPlayerPoints from "./components/NbaPlayerPoints";
 import NbaMatchWinners from "./components/NbaMatchWinners";
 import NflPlayerResearch from "./components/NflPlayerResearch";
+import TeamTotals from "./components/TeamTotals";
 
 const SPORTS=[
   ["NFL","NFL"],
@@ -21,6 +22,7 @@ const WOMEN_TABS=[["TOTALS","Top 5 Hot Totals"],["WINNERS","Outright Winners"]];
 
 const NFL_FILTERS=[
   ["ALL","All Games"],
+  ["TEAM_TOTALS","Team Totals"],
   ["OVER","Overs"],
   ["UNDER","Unders"],
   ["HOT","🔥 Hot Picks"],
@@ -252,7 +254,7 @@ export default function Home(){
     const list=nfl?.games||[];
     if(nflFilter==="ALL")return list;
     if(nflFilter==="HOT")return list.filter(g=>g.isHot).sort((a,b)=>(a.hotRank||99)-(b.hotRank||99));
-    if(["SPREAD","WR","TD","QB"].includes(nflFilter))return [];
+    if(["SPREAD","WR","TD","QB","TEAM_TOTALS"].includes(nflFilter))return [];
     return list.filter(g=>g.side===nflFilter);
   },[nfl,nflFilter]);
 
@@ -281,6 +283,7 @@ export default function Home(){
   },[nfl]);
 
   const activeBoard=sport==="NFL"?nfl:sportBoards[sport];
+  const teamTotalsView=(sport==="NFL"&&nflFilter==="TEAM_TOTALS")||(sport==="NBA"&&nbaTab==="TEAM_TOTALS");
   const womenView=WOMEN_TABS.find(([id])=>id===womenTab)[1];
   const womenGames=(womenTab==="TOTALS"?activeBoard?.games:activeBoard?.winners)||[];
 
@@ -290,7 +293,7 @@ export default function Home(){
         <span className="brandMark">25</span>
         <span><strong>ALT25</strong><small>SPORTS TOTALS INTELLIGENCE</small></span>
       </a>
-      <div className="liveChip"><span className="liveDot"/>{sport==="WNCAAB"?"WOMEN’S COLLEGE BASKETBALL":sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
+      <div className="liveChip"><span className="liveDot"/>{teamTotalsView?`${sport} TEAM TOTALS`:sport==="WNCAAB"?"WOMEN’S COLLEGE BASKETBALL":sport==="NFL"?(nfl?.boardMode==="WAITING"?"NEXT SLATE":"NFL BOARD"):sport==="NBA"&&nbaTab==="WINNERS"?"NBA MATCH WINNERS":sport==="NBA"&&nbaTab==="POINTS"?"NBA PLAYER POINTS":sport==="NBA"&&nbaTab==="SPREADS"?"NBA BEST SPREADS":sport==="NBA"&&nbaTab==="DOG"?"NBA DOG + TOTAL":sport==="NBA"?"NBA ALL TOTALS":`${sport} TOP 3`}</div>
     </header>
 
     <section className="heroRevamp">
@@ -339,22 +342,26 @@ export default function Home(){
         <div><span>Week</span><strong>{nfl.week||"—"}</strong></div>
       </section>}
 
-      {nfl&&nfl.boardMode==="EARLY"&&<section className="lullBanner">
+      {!teamTotalsView&&nfl&&nfl.boardMode==="EARLY"&&<section className="lullBanner">
         <div><span className="sectionEyebrow">EARLY BOARD</span><h2>Next NFL slate is live.</h2><p>Totals are posted. Weather and injury information will sharpen automatically as kickoff gets closer.</p></div>
         <div className="readiness"><span className="ready">Odds ✓</span><span>Weather developing</span><span>Injuries developing</span><span>Model active</span></div>
       </section>}
 
-      {nfl&&nfl.boardMode==="WAITING"&&<section className="lullBanner">
+      {!teamTotalsView&&nfl&&nfl.boardMode==="WAITING"&&<section className="lullBanner">
         <div><span className="sectionEyebrow">NEXT NFL SLATE</span><h2>Lines are loading.</h2><p>The matchups are here. ALT25 will turn them into picks automatically when totals post.</p></div>
         <div className="readiness"><span>Odds pending</span><span>Schedule ✓</span><span>Model standing by</span></div>
       </section>}
 
-      {nfl&&nfl.boardMode==="WAITING"&&nfl.upcomingSchedule?.length>0&&<section className="schedulePreview">
+      {!teamTotalsView&&nfl&&nfl.boardMode==="WAITING"&&nfl.upcomingSchedule?.length>0&&<section className="schedulePreview">
         <div className="sectionTitle"><div><span className="sectionEyebrow">UPCOMING</span><h2>NFL Week {nfl.week}</h2></div></div>
         <div className="previewGrid">{nfl.upcomingSchedule.map((g,i)=><div className="previewCard" key={i}><span>{fmt(g.kickoff)}</span><strong>{g.away} @ {g.home}</strong><small>Waiting for total</small></div>)}</div>
       </section>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&nfl.games?.length>0&&<section className="environmentSection">
+      <nav className="tabBar" aria-label="NFL filters">
+        {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} aria-pressed={nflFilter===id} onClick={()=>setNflFilter(id)}>{label}</button>)}
+      </nav>
+
+      {!teamTotalsView&&nfl&&nfl.boardMode!=="WAITING"&&nfl.games?.length>0&&<section className="environmentSection">
         <div className="sectionTitle">
           <div>
             <span className="sectionEyebrow">NFL GAME ENVIRONMENT</span>
@@ -376,9 +383,6 @@ export default function Home(){
         </div>
       </section>}
 
-      {<nav className="tabBar" aria-label="NFL filters">
-        {NFL_FILTERS.map(([id,label])=><button key={id} type="button" className={nflFilter===id?"active":""} onClick={()=>setNflFilter(id)}>{label}</button>)}
-      </nav>}
       {["TD","QB"].includes(nflFilter)&&<NflPlayerResearch mode={nflFilter}/>}
 
       {nfl&&nfl.boardMode!=="WAITING"&&nflFilter==="WR"&&<section className="wrSection">
@@ -408,10 +412,10 @@ export default function Home(){
         </>}
       </section>}
 
-      {error&&<div className="stateBox errorBox">{error}</div>}
-      {!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
+      {!teamTotalsView&&error&&<div className="stateBox errorBox">{error}</div>}
+      {!teamTotalsView&&!nfl&&!error&&<div className="stateBox">Building the NFL board…</div>}
 
-      {nfl&&nfl.boardMode!=="WAITING"&&!["SPREAD","WR","TD","QB"].includes(nflFilter)&&<section className="boardSection">
+      {nfl&&nfl.boardMode!=="WAITING"&&!["SPREAD","WR","TD","QB","TEAM_TOTALS"].includes(nflFilter)&&<section className="boardSection">
         <div className="boardHeading"><div><span className="sectionEyebrow">NFL</span><h2>{nflFilter==="ALL"?"Full Board":nflFilter==="HOT"?"Top 5 Hot Picks":`${nflFilter} Picks`}</h2></div><span>{nflGames.length} games</span></div>
         <div className="gameGrid">{nflGames.map((g,i)=><NflCard g={g} key={`${g.away}-${g.home}-${i}`}/>)}</div>
       </section>}
@@ -429,6 +433,7 @@ export default function Home(){
 
     {sport==="NBA"&&<nav className="tabBar" aria-label="NBA views">
       <button type="button" className={nbaTab==="TOTALS"?"active":""} aria-pressed={nbaTab==="TOTALS"} onClick={()=>setNbaTab("TOTALS")}>All Totals</button>
+      <button type="button" className={nbaTab==="TEAM_TOTALS"?"active":""} aria-pressed={nbaTab==="TEAM_TOTALS"} onClick={()=>setNbaTab("TEAM_TOTALS")}>Team Totals</button>
       <button type="button" className={nbaTab==="WINNERS"?"active":""} aria-pressed={nbaTab==="WINNERS"} onClick={()=>setNbaTab("WINNERS")}>Match Winners</button>
       <button type="button" className={nbaTab==="DOG"?"active":""} aria-pressed={nbaTab==="DOG"} onClick={()=>setNbaTab("DOG")}>Dog + Total</button>
       <button type="button" className={nbaTab==="SPREADS"?"active":""} aria-pressed={nbaTab==="SPREADS"} onClick={()=>setNbaTab("SPREADS")}>Best Spreads</button>
@@ -438,6 +443,14 @@ export default function Home(){
     {sport==="NBA"&&nbaTab==="DOG"&&<NbaDogTotal/>}
     {sport==="NBA"&&nbaTab==="SPREADS"&&<NbaSpreads/>}
     {sport==="NBA"&&nbaTab==="POINTS"&&<NbaPlayerPoints/>}
+
+    {teamTotalsView&&<TeamTotals
+      sport={sport}
+      board={activeBoard}
+      error={sport==="NFL"?error:activeBoard?.status==="ERROR"?activeBoard.message:""}
+      formatGameTime={fmt}
+      formatSnapshot={fmtUpdated}
+    />}
 
     {sport!=="WNCAAB"&&sport!=="NFL"&&(sport!=="NBA"||nbaTab==="TOTALS")&&<section className="otherSportSection">
       {loadingSport===sport&&!sportBoards[sport]&&<div className="stateBox">Loading {sport} totals…</div>}

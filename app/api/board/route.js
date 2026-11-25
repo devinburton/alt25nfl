@@ -8,6 +8,7 @@ import{analyzeGame}from"../../../lib/model";
 import{analyzeSpreadGame}from"../../../lib/spreadModel";
 import{analyzeMoneylineGame}from"../../../lib/moneylineModel";
 import{getLateSeasonContext,contextAdjustment}from"../../../lib/seasonContext";
+import{projectTeamTotals}from"../../../lib/teamTotalsModel";
 
 export const dynamic="force-dynamic";
 const norm=(s="")=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -80,6 +81,7 @@ export async function GET(){
   });
 
   const spreadMap=new Map((spreadBundle.games||[]).map(s=>[keyOf(s),s]));
+  const spreadsById=new Map((spreadBundle.games||[]).map(s=>[s.id,s]));
   const seasonGames=await getSeasonScoreboard(current.year,current.seasonType);
 
   const spreadCandidates=[];
@@ -115,7 +117,11 @@ export async function GET(){
     const awayInjury=injuryAdjustment(awayItems);
     const homeInjury=injuryAdjustment(homeItems);
 
-    const spread=spreadMap.get(keyOf(o));
+    const matchupSpread=spreadMap.get(keyOf(o));
+    const spread=spreadsById.get(o.id)??(
+      Math.abs(Date.parse(o.kickoff)-Date.parse(matchupSpread?.kickoff))<=4*3600000?matchupSpread:null
+    );
+    let projectedMargin;
     if(spread){
       const spreadPick=analyzeSpreadGame({
         ...s,
@@ -128,6 +134,7 @@ export async function GET(){
         homeInjury
       });
       if(spreadPick)spreadCandidates.push(spreadPick);
+      projectedMargin=spreadPick?.projectedMargin;
 
       const mlPick=analyzeMoneylineGame({
         ...s,
@@ -143,7 +150,7 @@ export async function GET(){
       if(mlPick)moneylineCandidates.push(mlPick);
     }
 
-    return analyzeGame({
+    const game=analyzeGame({
       ...s,
       total:o.total,
       booksCount:o.booksCount,
@@ -154,7 +161,8 @@ export async function GET(){
       homeInjury,
       seasonContext,
       seasonContextEffect:contextAdjustment(seasonContext)
-    })
+    });
+    return {...game,teamTotals:projectTeamTotals(game,"NFL",spread?.homeSpread,projectedMargin)};
   }));
 
   const games=rows.filter(Boolean).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));

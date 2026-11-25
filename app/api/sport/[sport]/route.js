@@ -5,6 +5,7 @@ import{getMlbGameContext}from"../../../../lib/mlbFreeData";
 import{getLateSeasonContext,contextAdjustment}from"../../../../lib/seasonContext";
 import{analyzeSportGame}from"../../../../lib/sportModel";
 import{consensusWinner}from"../../../../lib/moneylineModel";
+import{projectTeamTotals}from"../../../../lib/teamTotalsModel";
 
 function easternDate(iso){
   const parts=new Intl.DateTimeFormat("en-CA",{year:"numeric",month:"2-digit",day:"2-digit",timeZone:"America/New_York"}).formatToParts(new Date(iso));
@@ -80,7 +81,7 @@ export async function GET(req,{params}){
         game:g
       });
 
-      return analyzeSportGame({
+      const game=analyzeSportGame({
         ...g,
         awayProfile:recentProfile(g.away,history,g.kickoff,config.recentGames),
         homeProfile:recentProfile(g.home,history,g.kickoff,config.recentGames),
@@ -88,6 +89,9 @@ export async function GET(req,{params}){
         seasonContext,
         seasonContextEffect:contextAdjustment(seasonContext)
       },config);
+      return id==="NBA"
+        ? {...game,teamTotals:projectTeamTotals(game,"NBA",Number.isFinite(g.awaySpread)?-g.awaySpread:null)}
+        : game;
     }));
 
     const ranked=analyzed
